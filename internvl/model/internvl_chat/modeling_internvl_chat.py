@@ -36,6 +36,10 @@ def version_cmp(v1, v2, op='eq'):
 
 
 class InternVLChatModel(PreTrainedModel):
+    """
+    Base model for training
+    """
+
     config_class = InternVLChatConfig
     main_input_name = 'pixel_values'
     _no_split_modules = ['InternVisionModel', 'LlamaDecoderLayer', 'InternLM2DecoderLayer',

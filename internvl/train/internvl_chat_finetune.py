@@ -34,6 +34,7 @@ from internvl.train.dataset import (ConcatDataset, TCSLoader,
                                     dynamic_preprocess, preprocess,
                                     preprocess_internlm, preprocess_mpt,
                                     preprocess_phi3)
+from internvl.train.mbeir_dataset import MbeirAdapter
 from internvl.train.trainer_monkey_patch import replace_create_optimizer
 from PIL import Image, ImageFile, PngImagePlugin, UnidentifiedImageError
 from torch.utils.data import Dataset
@@ -604,13 +605,13 @@ def main():
     # Parse input arguments
     # See all possible arguments in src/transformers/training_args.py
     # If use DeepSpeed zero3, init_dist must before HfArgumentParser
-    launcher = os.environ.get('LAUNCHER', 'slurm')
+    launcher = "pytorch"
     init_dist(launcher=launcher, backend='nccl')
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
-    if len(sys.argv) == 2 and sys.argv[1].endswith('.json'):
+    if len(sys.argv) == 3 and sys.argv[-1].endswith('.json'):
         # If we pass only one argument to the script, and it's the path to a json file,
         # let's parse it to get our arguments.
-        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
@@ -842,6 +843,22 @@ def main():
         trainer.save_metrics('train', metrics)
         trainer.save_state()
 
+def test():
+    
+    launcher = "pytorch"
+    init_dist(launcher=launcher, backend='nccl')
+    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+    if len(sys.argv) == 3 and sys.argv[-1].endswith('.json'):
+        # If we pass only one argument to the script, and it's the path to a json file,
+        # let's parse it to get our arguments.
+        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
+    else:
+        model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+
+    ds = MbeirAdapter(data_args)
+    item = ds[0]
+    print(item)
 
 if __name__ == '__main__':
-    main()
+    #main()
+    test()

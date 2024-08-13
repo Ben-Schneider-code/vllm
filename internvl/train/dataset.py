@@ -1,5 +1,6 @@
 import io
 
+import torch.utils
 from transformers.trainer_pt_utils import LabelSmoother
 
 IGNORE_TOKEN_ID = LabelSmoother.ignore_index

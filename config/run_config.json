@@ -29,7 +29,7 @@
     "max_seq_length": 4096,
     "do_train": true,
     "grad_checkpoint": true,
-    "group_by_length": true,
+    "group_by_length": false,
     "dynamic_image_size": true,
     "use_thumbnail": true,
     "ps_version": "v2",

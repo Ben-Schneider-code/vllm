@@ -3,7 +3,6 @@ import torch
 
 IGNORE_INDEX = -100
 
-
 def pad_data_collator(features, pad_id=0):
 
     first = features[0]

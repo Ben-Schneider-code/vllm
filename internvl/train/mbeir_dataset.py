@@ -526,7 +526,7 @@ class MbeirAdapter():
             "conversations": [
                 {
                 "from": "human",
-                "value": retrieval_item["query"]["txt"] + "<cls_1>"
+                "value": retrieval_item["query"]["txt"] + "<CLS_1>"
                 },
                 {
                 "from": "gpt",
@@ -540,7 +540,7 @@ class MbeirAdapter():
             "conversations": [
                 {
                 "from": "human",
-                "value": retrieval_item["pos_cand"]["txt"] + "<cls_2>"
+                "value": retrieval_item["pos_cand"]["txt"] + "<CLS_2>"
                 },
                 {
                 "from": "gpt",

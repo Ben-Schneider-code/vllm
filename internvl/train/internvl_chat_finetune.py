@@ -28,7 +28,7 @@ from internvl.train.constants import (BOX_END_TOKEN, BOX_START_TOKEN,
                                       IMG_CONTEXT_TOKEN, IMG_END_TOKEN,
                                       IMG_START_TOKEN, QUAD_END_TOKEN,
                                       QUAD_START_TOKEN, REF_END_TOKEN,
-                                      REF_START_TOKEN)
+                                      REF_START_TOKEN, QUERY_TOKEN, CANDIDATE_TOKEN)
 from internvl.train.dataset import (ConcatDataset, TCSLoader,
                                     WeightedConcatDataset, build_transform,
                                     dynamic_preprocess, preprocess,
@@ -729,8 +729,10 @@ def load_model(model_args, data_args, training_args, logger):
     tokenizer.model_max_length = data_args.max_seq_length
     token_list = [IMG_START_TOKEN, IMG_END_TOKEN, IMG_CONTEXT_TOKEN,
                   QUAD_START_TOKEN, QUAD_END_TOKEN, REF_START_TOKEN,
-                  REF_END_TOKEN, BOX_START_TOKEN, BOX_END_TOKEN]
+                  REF_END_TOKEN, BOX_START_TOKEN, BOX_END_TOKEN, QUERY_TOKEN, CANDIDATE_TOKEN]
     num_new_tokens = tokenizer.add_tokens(token_list, special_tokens=True)
+    logger.info(f'Number of added tokens: {num_new_tokens}')
+
     img_context_token_id = tokenizer.convert_tokens_to_ids(IMG_CONTEXT_TOKEN)
     tcs_loader = TCSLoader('~/petreloss.conf') if has_tcs_loader else None
 
@@ -863,7 +865,7 @@ def main():
     init_dist(launcher=launcher, backend='nccl')
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
-    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
 
     logger = setup_logger(training_args)
 
@@ -881,16 +883,18 @@ def main():
                 f'Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change '
                 'the `--output_dir` or add `--overwrite_output_dir` to train from scratch.'
             )
+            
     # Set seed before initializing model.
     set_seed(training_args.seed)
 
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
 
-    train_dataset = build_datasets(
-        data_args, tokenizer, tcs_loader, model, group_by_length=training_args.group_by_length,
-        dynamic_image_size=data_args.dynamic_image_size, use_thumbnail=data_args.use_thumbnail,
-        min_dynamic_patch=data_args.min_dynamic_patch, max_dynamic_patch=data_args.max_dynamic_patch,
-        normalize_type=data_args.normalize_type)
+    train_dataset = build_contrastive_dataset(
+    data_args,
+    tokenizer,
+    tcs_loader,
+    model
+    )
 
     def _freeze_params(module):
         for param in module.parameters():
@@ -987,5 +991,5 @@ def test():
     print(item)
 
 if __name__ == '__main__':
-    #main()
+    main()
     test()

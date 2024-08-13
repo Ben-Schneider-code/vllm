@@ -516,4 +516,39 @@ class MbeirAdapter():
 
     def __getitem__(self, idx):
         retrieval_item = self.base_ds[idx]
-        return retrieval_item
+        
+        formatted_item = {
+            
+            "query": {
+            "id": retrieval_item["qid"],
+            "conversations": [
+                {
+                "from": "human",
+                "value": retrieval_item["query"]["txt"] + "<cls_1>"
+                },
+                {
+                "from": "gpt",
+                "value": " "
+                }
+            ]
+            },
+
+            "cand": {
+            "id": retrieval_item["p_did"],
+            "conversations": [
+                {
+                "from": "human",
+                "value": retrieval_item["pos_cand"]["txt"] + "<cls_2>"
+                },
+                {
+                "from": "gpt",
+                "value": " "
+                }
+            ]
+            }
+        }
+        
+        if retrieval_item["query"]["img"] is not None: formatted_item["query"]["image"] = retrieval_item["query"]["img"]
+        if retrieval_item["pos_cand"]["img"] is not None: formatted_item["pos_cand"]["image"] = retrieval_item["pos_cand"]["img"]
+
+        return formatted_item

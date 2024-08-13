@@ -1,0 +1,37 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Debug DeepSpeed",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "--include",
+                "localhost:1",
+                "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
+                "~/mllm/config/run_config.json"
+            ],
+            "env": {
+                "PYTHONPATH": "/home/b3schnei/mllm"
+            }
+        },
+        {
+            "name": "Python: Debug pure python",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
+            "console": "integratedTerminal",
+            "args": [
+                "~/mllm/config/run_config.json"
+            ],
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "/home/b3schnei/mllm"
+            }
+        }
+
+    ]
+}

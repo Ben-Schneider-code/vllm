@@ -3,7 +3,6 @@ import socket
 import subprocess
 from datetime import timedelta
 
-import deepspeed
 import torch
 import torch.multiprocessing as mp
 from torch import distributed as dist
@@ -43,6 +42,7 @@ def init_dist(launcher, backend='nccl', **kwargs):
 
 
 def _init_dist_pytorch(backend, **kwargs):
+    import deepspeed
     # TODO: use local_rank instead of rank % num_gpus
     rank = int(os.environ['RANK'])
     num_gpus = torch.cuda.device_count()
@@ -75,6 +75,7 @@ def _init_dist_slurm(backend, port=None):
         backend (str): Backend of torch.distributed.
         port (int, optional): Master port. Defaults to None.
     """
+    import deepspeed
     proc_id = int(os.environ['SLURM_PROCID'])
     ntasks = int(os.environ['SLURM_NTASKS'])
     node_list = os.environ['SLURM_NODELIST']

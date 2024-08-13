@@ -47,6 +47,7 @@ from transformers.utils.logging import (enable_default_handler,
                                         enable_explicit_format, set_verbosity)
 
 # Apply necessary patches for the transformers library
+# TODO: move these out of global
 replace_llama_rmsnorm_with_fused_rmsnorm()
 replace_train_sampler()
 
@@ -615,8 +616,19 @@ class ContrastiveDataset(LazySupervisedDataset):
     def __len__(self):
         return len(self.mbeir_adapter)
 
+    def tokenize_input(item):
+        if "image" in item:
+            return super().multi_modal_get_item(item)
+        else:
+            return super().pure_text_get_item(item)
+
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         data_item = self.mbeir_adapter[i]
+        query = data_item["query"]
+        cand = data_item["pos_cand"]
+        data_item["query_tokenized"] = self.tokenize_input(query)
+        data_item["cand_tokenized"] = self.tokenize_input(cand)
+        return data_item
 
 def build_contrastive_dataset(
     data_args,
@@ -953,7 +965,7 @@ def main():
 def test():
     
     launcher = "pytorch"
-    #init_dist(launcher=launcher, backend='nccl')
+    init_dist(launcher=launcher, backend='nccl')
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
 

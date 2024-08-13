@@ -719,20 +719,8 @@ def build_datasets(
         train_dataset = ConcatDataset(datasets)
     return train_dataset
 
-
-def main():
-    # Parse input arguments
-    # See all possible arguments in src/transformers/training_args.py
-    # If use DeepSpeed zero3, init_dist must before HfArgumentParser
-    launcher = "pytorch"
-    init_dist(launcher=launcher, backend='nccl')
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
-    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
-   
-    # Set seed before initializing model.
-    set_seed(training_args.seed)
-
-    # Load pretrained model, tokenizer, and image processor
+def load_model(model_args, data_args, training_args, logger):
+     # Load pretrained model, tokenizer, and image processor
     tokenizer_path = model_args.model_name_or_path or model_args.llm_path
     logger.info(f'Loading Tokenizer: {tokenizer_path}')
     tokenizer = AutoTokenizer.from_pretrained(
@@ -834,6 +822,44 @@ def main():
     model.vision_model.encoder.gradient_checkpointing = True
     if model_args.grad_checkpoint:
         model.language_model._set_gradient_checkpointing()
+    return model, tokenizer, tcs_loader
+
+def main():
+    # Parse input arguments
+    # See all possible arguments in src/transformers/training_args.py
+    # If use DeepSpeed zero3, init_dist must before HfArgumentParser
+    launcher = "pytorch"
+    init_dist(launcher=launcher, backend='nccl')
+    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
+
+
+    # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
+    # information sent is the one passed as arguments along with your Python/PyTorch versions.
+    # send_example_telemetry('InternV-Chat', model_args, data_args)
+
+    # Setup logging
+    logging.basicConfig(
+        format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+        datefmt='%m/%d/%Y %H:%M:%S',
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+
+    if training_args.should_log:
+        # The default of training_args.log_level is passive, so we set log level at info here to have that default.
+        transformers.utils.logging.set_verbosity_info()
+
+    log_level = training_args.get_process_log_level()
+    logger.setLevel(log_level)
+    set_verbosity(log_level)
+    enable_default_handler()
+    enable_explicit_format()
+
+   
+    # Set seed before initializing model.
+    set_seed(training_args.seed)
+
+    model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
 
     train_dataset = build_datasets(
         data_args, tokenizer, tcs_loader, model, group_by_length=training_args.group_by_length,

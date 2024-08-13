@@ -727,55 +727,8 @@ def main():
     launcher = "pytorch"
     init_dist(launcher=launcher, backend='nccl')
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
-    if len(sys.argv) == 3 and sys.argv[-1].endswith('.json'):
-        # If we pass only one argument to the script, and it's the path to a json file,
-        # let's parse it to get our arguments.
-        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
-    else:
-        model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-
-    # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
-    # information sent is the one passed as arguments along with your Python/PyTorch versions.
-    # send_example_telemetry('InternV-Chat', model_args, data_args)
-
-    # Setup logging
-    logging.basicConfig(
-        format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-        datefmt='%m/%d/%Y %H:%M:%S',
-        handlers=[logging.StreamHandler(sys.stdout)],
-    )
-
-    if training_args.should_log:
-        # The default of training_args.log_level is passive, so we set log level at info here to have that default.
-        transformers.utils.logging.set_verbosity_info()
-
-    log_level = training_args.get_process_log_level()
-    logger.setLevel(log_level)
-    set_verbosity(log_level)
-    enable_default_handler()
-    enable_explicit_format()
-
-    # Log on each process the small summary:
-    logger.warning(
-        f'Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}'
-        + f'distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}'
-    )
-    logger.info(f'Training/evaluation parameters {training_args}')
-
-    # Detecting last checkpoint and eventually continue from last checkpoint.
-    last_checkpoint = None
-    if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
-        last_checkpoint = get_last_checkpoint(training_args.output_dir)
-        if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
-            raise ValueError(
-                f'Output directory ({training_args.output_dir}) already exists and is not empty. '
-                'Use --overwrite_output_dir to overcome.'
-            )
-        elif last_checkpoint is not None and training_args.resume_from_checkpoint is None:
-            logger.info(
-                f'Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change '
-                'the `--output_dir` or add `--overwrite_output_dir` to train from scratch.'
-            )
+    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
+   
     # Set seed before initializing model.
     set_seed(training_args.seed)
 

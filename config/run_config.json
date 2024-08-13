@@ -1,7 +1,7 @@
 {
-    "model_name_or_path": "~/pretrained/InternVL2-1B",
+    "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-1B",
     "conv_style": "Hermes-2",
-    "output_dir": "~/output",
+    "output_dir": "/home/b3schnei/output",
     "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
     "overwrite_output_dir": true,
     "force_image_size": 448,

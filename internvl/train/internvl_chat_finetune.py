@@ -616,7 +616,7 @@ class ContrastiveDataset(LazySupervisedDataset):
     def __len__(self):
         return len(self.mbeir_adapter)
 
-    def tokenize_input(item):
+    def tokenize_input(self, item):
         if "image" in item:
             return super().multi_modal_get_item(item)
         else:
@@ -625,7 +625,7 @@ class ContrastiveDataset(LazySupervisedDataset):
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         data_item = self.mbeir_adapter[i]
         query = data_item["query"]
-        cand = data_item["pos_cand"]
+        cand = data_item["cand"]
         data_item["query_tokenized"] = self.tokenize_input(query)
         data_item["cand_tokenized"] = self.tokenize_input(cand)
         return data_item
@@ -824,16 +824,8 @@ def load_model(model_args, data_args, training_args, logger):
         model.language_model._set_gradient_checkpointing()
     return model, tokenizer, tcs_loader
 
-def main():
-    # Parse input arguments
-    # See all possible arguments in src/transformers/training_args.py
-    # If use DeepSpeed zero3, init_dist must before HfArgumentParser
-    launcher = "pytorch"
-    init_dist(launcher=launcher, backend='nccl')
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
-    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
-
-
+def setup_logger(training_args):
+    
     # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
     # information sent is the one passed as arguments along with your Python/PyTorch versions.
     # send_example_telemetry('InternV-Chat', model_args, data_args)
@@ -855,7 +847,40 @@ def main():
     enable_default_handler()
     enable_explicit_format()
 
-   
+    # Log on each process the small summary:
+    logger.warning(
+        f'Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}'
+        + f'distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}'
+    )
+    logger.info(f'Training/evaluation parameters {training_args}')
+    return logger
+
+def main():
+    # Parse input arguments
+    # See all possible arguments in src/transformers/training_args.py
+    # If use DeepSpeed zero3, init_dist must before HfArgumentParser
+    launcher = "pytorch"
+    init_dist(launcher=launcher, backend='nccl')
+    
+    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+
+    logger = setup_logger(training_args)
+
+    # Detecting last checkpoint and eventually continue from last checkpoint.
+    last_checkpoint = None
+    if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
+        last_checkpoint = get_last_checkpoint(training_args.output_dir)
+        if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
+            raise ValueError(
+                f'Output directory ({training_args.output_dir}) already exists and is not empty. '
+                'Use --overwrite_output_dir to overcome.'
+            )
+        elif last_checkpoint is not None and training_args.resume_from_checkpoint is None:
+            logger.info(
+                f'Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change '
+                'the `--output_dir` or add `--overwrite_output_dir` to train from scratch.'
+            )
     # Set seed before initializing model.
     set_seed(training_args.seed)
 
@@ -947,10 +972,18 @@ def test():
     init_dist(launcher=launcher, backend='nccl')
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
-
-
-    ds = MbeirAdapter(data_args)
+    logger = setup_logger(training_args)
+    model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
+    print("model loaded")
+    ds = build_contrastive_dataset(
+    data_args,
+    tokenizer,
+    tcs_loader,
+    model
+    )
+    print("dataset init")
     item = ds[0]
+    print("done")
     print(item)
 
 if __name__ == '__main__':

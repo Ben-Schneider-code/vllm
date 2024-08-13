@@ -10,7 +10,7 @@
             "console": "integratedTerminal",
             "args": [
                 "--include",
-                "localhost:1",
+                "localhost:7",
                 "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
                 "~/mllm/config/run_config.json"
             ],

@@ -1,7 +1,7 @@
 # Standard library
 import base64
 import io
-import json
+import orjson
 import os
 import random
 from enum import Enum
@@ -55,8 +55,9 @@ class MBEIRDatasetBase(Dataset):
         data_entries = []
         with open(datapath, "r") as fin:
             for line in fin:
-                data_entry = json.loads(line)
+                data_entry = orjson.loads(line)
                 data_entries.append(data_entry)
+
         return data_entries
 
     def _load_data(self, data_path):
@@ -130,6 +131,7 @@ class MBEIRMainDataset(MBEIRDatasetBase):
     ):
         super().__init__(mbeir_data_dir, img_preprocess_fn)
 
+        # TODO speed up loading of these two files
         self._load_query_data(query_data_path)
         self._load_cand_pool_as_dict(cand_pool_path)
         self._load_query_instructions(query_instruct_path)

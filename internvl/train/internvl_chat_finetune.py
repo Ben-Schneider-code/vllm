@@ -220,6 +220,8 @@ class DataTrainingArguments:
         )
 
 
+            
+
 class LazySupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
@@ -292,6 +294,7 @@ class LazySupervisedDataset(Dataset):
 
         # If the precomputed length does not exist, roughly estimate the length of
         # each sample to improve the efficiency of group_by_length.
+        # set group by length to false to avoid large preprocessing.
         if self.group_by_length:
             self.conv2length = {}  # Using a dictionary to speed up token length calculation
             self.length = []
@@ -562,6 +565,93 @@ class LazySupervisedDataset(Dataset):
                 i = random.randint(0, len(self.raw_data) - 1)
         return ret
 
+class ContrastiveDataset(LazySupervisedDataset):
+    
+    def __init__(
+        self,
+        data_args,
+        template_name,
+        meta,
+        tokenizer,
+        tcs_loader,
+        ds_name,
+        num_image_token,
+        image_size=224,
+        is_train=True,
+        pad2square=False,
+        group_by_length=False,
+        dynamic_image_size=False,
+        use_thumbnail=False,
+        min_dynamic_patch=1,
+        max_dynamic_patch=6,
+        min_num_frame=4,  # for video data
+        max_num_frame=12,  # for video data
+        sampling_method='rand',  # for video data
+        repeat_time=1,
+        normalize_type='imagenet',
+        random_seed=0,
+    ):
+        self.ds_name = ds_name
+        self.tokenizer = tokenizer
+        self.template_name = template_name
+        self.num_image_token = num_image_token
+        self.image_size = image_size
+        self.is_train = is_train
+        self.pad2square = pad2square
+        self.max_num_frame = max_num_frame
+        self.min_num_frame = min_num_frame
+        self.sampling_method = sampling_method
+        self.mbeir_adapter = MbeirAdapter(data_args=data_args)
+        self.root = meta
+        self.cached_data_dict = {}
+        self.tcs_loader = tcs_loader
+        self.group_by_length = group_by_length
+        self.dynamic_image_size = dynamic_image_size
+        self.use_thumbnail = use_thumbnail
+        self.min_dynamic_patch = min_dynamic_patch
+        self.max_dynamic_patch = max_dynamic_patch
+        self.normalize_type = normalize_type
+    
+    def __len__(self):
+        return len(self.mbeir_adapter)
+
+    def __getitem__(self, i) -> Dict[str, torch.Tensor]:
+        data_item = self.mbeir_adapter[i]
+
+def build_contrastive_dataset(
+    data_args,
+    tokenizer,
+    tcs_loader,
+    model,
+    group_by_length=False,
+    dynamic_image_size=False,
+    use_thumbnail=False,
+    min_dynamic_patch=1,
+    max_dynamic_patch=12,
+    normalize_type='imagenet',
+):  
+    
+    return ContrastiveDataset(
+            data_args,
+            data_args.conv_style,
+            data_args.mbeir_root,
+            tokenizer,
+            tcs_loader,
+            ds_name="mbeir",
+            num_image_token=model.num_image_token,
+            image_size=data_args.force_image_size,
+            is_train=True,
+            pad2square=data_args.pad2square,
+            group_by_length=group_by_length,
+            dynamic_image_size=dynamic_image_size,
+            use_thumbnail=use_thumbnail,
+            min_dynamic_patch=min_dynamic_patch,
+            max_dynamic_patch=max_dynamic_patch,
+            repeat_time=1,
+            normalize_type=normalize_type,
+            random_seed=0,
+        )
+    
 
 def build_datasets(
     data_args,

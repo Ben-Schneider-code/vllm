@@ -29,6 +29,8 @@ class Mode(Enum):
     TRAIN = "train"
     EVAL = "eval"
 
+def no_op(x):
+    return x
 
 class MBEIRDatasetBase(Dataset):
     def __init__(
@@ -46,7 +48,7 @@ class MBEIRDatasetBase(Dataset):
         - training (bool): Indicator if the dataset is for training.
         """
         self.mbeir_data_dir = mbeir_data_dir
-        self.img_preprocess_fn = img_preprocess_fn or (lambda x: x)
+        self.img_preprocess_fn = img_preprocess_fn or no_op
 
     def __len__(self):
         raise NotImplementedError("This method should be implemented in derived classes.")
@@ -535,7 +537,7 @@ class MbeirAdapter():
             ]
             },
 
-            "cand": {
+            "pos_cand": {
             "id": retrieval_item["p_did"],
             "conversations": [
                 {

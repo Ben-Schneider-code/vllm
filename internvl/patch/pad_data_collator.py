@@ -46,7 +46,6 @@ def pad_data_collator(features, pad_id=0):
                 batch[k] = torch.tensor([f[k] for f in features])
     return batch
 
-
 def concat_pad_data_collator(features, pad_id=0):
 
     first = features[0]
@@ -97,3 +96,16 @@ def concat_pad_data_collator(features, pad_id=0):
             else:
                 batch[k] = torch.concat([f[k] for f in features])
     return batch
+
+def contrastive_data_collator(features, pad_id=0):
+    
+    query_batch = [item["query_tokenized"] for item in features]
+    cand_batch = [item["cand_tokenized"] for item in features]
+    
+    query_batch = concat_pad_data_collator(query_batch)
+    cand_batch = concat_pad_data_collator(cand_batch)
+
+    return {
+        "query" : query_batch,
+        "pos_cand": cand_batch
+    }

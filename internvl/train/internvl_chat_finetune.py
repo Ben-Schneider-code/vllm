@@ -21,7 +21,7 @@ from internvl.model.internvl_chat import (InternVisionConfig,
                                           InternVisionModel,
                                           InternVLChatConfig,
                                           InternVLChatModel)
-from internvl.patch import (concat_pad_data_collator,
+from internvl.patch import (contrastive_data_collator,
                             replace_llama_rmsnorm_with_fused_rmsnorm,
                             replace_train_sampler)
 from internvl.train.constants import (BOX_END_TOKEN, BOX_START_TOKEN,
@@ -29,6 +29,7 @@ from internvl.train.constants import (BOX_END_TOKEN, BOX_START_TOKEN,
                                       IMG_START_TOKEN, QUAD_END_TOKEN,
                                       QUAD_START_TOKEN, REF_END_TOKEN,
                                       REF_START_TOKEN, QUERY_TOKEN, CANDIDATE_TOKEN)
+from internvl.train.contrastive_trainer import ContrastiveTrainer
 from internvl.train.dataset import (ConcatDataset, TCSLoader,
                                     WeightedConcatDataset, build_transform,
                                     dynamic_preprocess, preprocess,
@@ -40,7 +41,7 @@ from internvl.train.trainer_monkey_patch import replace_create_optimizer
 from PIL import Image, ImageFile, PngImagePlugin, UnidentifiedImageError
 from torch.utils.data import Dataset
 from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
-                          HfArgumentParser, Trainer, TrainingArguments,
+                          HfArgumentParser, TrainingArguments,
                           set_seed)
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils.logging import (enable_default_handler,
@@ -49,7 +50,7 @@ from transformers.utils.logging import (enable_default_handler,
 # Apply necessary patches for the transformers library
 # TODO: move these out of global
 replace_llama_rmsnorm_with_fused_rmsnorm()
-replace_train_sampler()
+# replace_train_sampler()
 
 # Try to import petrel_client for image loading, fallback to PIL if unavailable
 try:
@@ -625,7 +626,7 @@ class ContrastiveDataset(LazySupervisedDataset):
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         data_item = self.mbeir_adapter[i]
         query = data_item["query"]
-        cand = data_item["cand"]
+        cand = data_item["pos_cand"]
         data_item["query_tokenized"] = self.tokenize_input(query)
         data_item["cand_tokenized"] = self.tokenize_input(cand)
         return data_item
@@ -941,13 +942,13 @@ def main():
     if model_args.use_custom_trainer:
         replace_create_optimizer()
 
-    trainer = Trainer(
+    trainer = ContrastiveTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
         eval_dataset=None,
         tokenizer=tokenizer,
-        data_collator=concat_pad_data_collator
+        data_collator=contrastive_data_collator
     )
 
     # Training
@@ -992,4 +993,4 @@ def test():
 
 if __name__ == '__main__':
     main()
-    test()
+    #test()

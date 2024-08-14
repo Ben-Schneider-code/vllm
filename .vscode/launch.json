@@ -15,7 +15,8 @@
                 "~/mllm/config/run_config.json"
             ],
             "env": {
-                "PYTHONPATH": "/home/b3schnei/mllm"
+                "PYTHONPATH": "/home/b3schnei/mllm",
+                "WANDB_MODE":"offline"
             }
         },
         {
@@ -29,7 +30,8 @@
             ],
             "justMyCode": false,
             "env": {
-                "PYTHONPATH": "/home/b3schnei/mllm"
+                "PYTHONPATH": "/home/b3schnei/mllm",
+                "WANDB_MODE":"offline"
             }
         }
 

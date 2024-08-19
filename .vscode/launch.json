@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Debug DeepSpeed",
+            "name": "Debug DeepSpeed",
             "type": "debugpy",
             "request": "launch",
             "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
@@ -11,6 +11,24 @@
             "args": [
                 "--include",
                 "localhost:7",
+                "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
+                "~/mllm/config/run_config.json"
+            ],
+            "env": {
+                "PYTHONPATH": "/home/b3schnei/mllm",
+                "WANDB_MODE":"offline"
+            }
+        },
+        {
+            "name": "Debug DeepSpeed - 2 GPU",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "--include",
+                "localhost:6,7",
                 "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
                 "~/mllm/config/run_config.json"
             ],

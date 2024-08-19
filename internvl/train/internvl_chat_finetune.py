@@ -47,6 +47,8 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils.logging import (enable_default_handler,
                                         enable_explicit_format, set_verbosity)
 
+from torch.profiler import profile, record_function, ProfilerActivity
+
 # Apply necessary patches for the transformers library
 # TODO: move these out of global
 replace_llama_rmsnorm_with_fused_rmsnorm()
@@ -979,17 +981,13 @@ def test():
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
     logger = setup_logger(training_args)
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
+    model.to(device="cuda:0")
+    pytorch_total_params = sum(p.numel() for p in model.parameters())
+    print(pytorch_total_params)
+
     print("model loaded")
-    ds = build_contrastive_dataset(
-    data_args,
-    tokenizer,
-    tcs_loader,
-    model
-    )
-    print("dataset init")
-    item = ds[0]
-    print("done")
-    print(item)
+
+
 
 if __name__ == '__main__':
     main()

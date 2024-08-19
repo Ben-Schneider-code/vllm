@@ -431,7 +431,8 @@ def preprocess_mpt(
     input_ids = tokenizer(
         conversations,
         return_tensors='pt',
-        padding=False if group_by_length or use_packed_ds else 'max_length',
+        # Change to never pad to full length.
+        padding=False, # if group_by_length or use_packed_ds else 'max_length',
         max_length=tokenizer.model_max_length,
         truncation=True,
     ).input_ids

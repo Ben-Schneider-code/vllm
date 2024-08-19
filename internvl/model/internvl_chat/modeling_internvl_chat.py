@@ -159,6 +159,7 @@ class InternVLChatModel(PreTrainedModel):
         vit_embeds = vit_embeds[image_flags == 1]
         vit_batch_size = pixel_values.shape[0]
 
+        # Batch size, Embedding dim, Sequence Length (?)
         B, N, C = input_embeds.shape
         input_embeds = input_embeds.reshape(B * N, C)
 
@@ -195,12 +196,12 @@ class InternVLChatModel(PreTrainedModel):
         loss = None
         if labels is not None:
             # Shift so that tokens < n predict n
-            shift_logits = logits[..., :-1, :].contiguous()
-            shift_labels = labels[..., 1:].contiguous()
+            shift_logits = logits[..., :-1, :]#.contiguous()
+            shift_labels = labels[..., 1:]#.contiguous()
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
-            shift_logits = shift_logits.view(-1, self.language_model.config.vocab_size)
-            shift_labels = shift_labels.view(-1)
+            shift_logits = shift_logits.reshape(-1, self.language_model.config.vocab_size)
+            shift_labels = shift_labels.reshape(-1)
             # Enable model parallelism
             shift_labels = shift_labels.to(shift_logits.device)
             loss = loss_fct(shift_logits, shift_labels)

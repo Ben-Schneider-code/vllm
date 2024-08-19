@@ -4,7 +4,7 @@
     "overlap_comm": true,
     "contiguous_gradients": true,
     "stage3_gather_16bit_weights_on_model_save": true,
-    "reduce_bucket_size": 1e7
+    "reduce_bucket_size": 1e6
   },
   "fp16": {
     "enabled": "auto",

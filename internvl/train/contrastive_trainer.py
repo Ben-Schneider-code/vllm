@@ -30,6 +30,9 @@ class ContrastiveTrainer(Trainer):
           self.clippy_callback = ClippyCallback()
           self.add_callback(self.clippy_callback)
 
+     def log(self, key, value):
+          self.clippy_callback.additional_metrics[key] = value
+
      def compute_loss(self, model, inputs, return_outputs=False):
           """
           How the loss is computed by Trainer. By default, all models return the loss in the first element.
@@ -94,8 +97,7 @@ class ContrastiveTrainer(Trainer):
           c_embed_gathered = torch.cat(c_embed_list, dim=0)
 
           loss, acc = compute_contrastive_loss(q_embed_gathered,c_embed_gathered)
-          self.clippy_callback.additional_metrics["accuracy"] = acc.cpu().item()
-
+          self.log("accuracy", acc.detach().cpu())
           # torch.cuda.memory._dump_snapshot("/home/b3schnei/memory_snap_8.pickle")
           return loss
 

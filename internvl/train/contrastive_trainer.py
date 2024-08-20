@@ -5,10 +5,31 @@ from transformers.trainer import RandomSampler
 import torch.nn.functional as F
 from transformers.modeling_outputs import CausalLMOutputWithPast
 import torch.distributed as dist
+from transformers.integrations import WandbCallback
+import os
+
+class ClippyCallback(WandbCallback):
+
+    def __init__(self):
+        super().__init__()
+        self.additional_metrics = {}
+
+    def setup(self, args, state, model, **kwargs):
+        super().setup(args, state, model, **kwargs)
+        if state.is_world_process_zero:
+            self._wandb.config.update({"pid": str(os.getpid())}, allow_val_change=True)
+
+    def on_log(self, args, state, control, model=None, logs=None, **kwargs):
+        super().on_log(args, state, control, model=model, logs=logs | self.additional_metrics, **kwargs)
+        self.additional_metrics.clear()
 
 class ContrastiveTrainer(Trainer):
 
-     # still need to add loss computation
+     def __init__(self, *args, **kwargs):
+          super().__init__(*args, **kwargs)
+          self.clippy_callback = ClippyCallback()
+          self.add_callback(self.clippy_callback)
+
      def compute_loss(self, model, inputs, return_outputs=False):
           """
           How the loss is computed by Trainer. By default, all models return the loss in the first element.
@@ -73,6 +94,7 @@ class ContrastiveTrainer(Trainer):
           c_embed_gathered = torch.cat(c_embed_list, dim=0)
 
           loss, acc = compute_contrastive_loss(q_embed_gathered,c_embed_gathered)
+          self.clippy_callback.additional_metrics["accuracy"] = acc.cpu().item()
 
           # torch.cuda.memory._dump_snapshot("/home/b3schnei/memory_snap_8.pickle")
           return loss

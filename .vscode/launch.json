@@ -10,9 +10,9 @@
             "console": "integratedTerminal",
             "args": [
                 "--include",
-                "localhost:7",
+                "localhost:0",
                 "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
-                "~/mllm/config/run_config.json"
+                "~/mllm/config/train_full_model.json"
             ],
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",

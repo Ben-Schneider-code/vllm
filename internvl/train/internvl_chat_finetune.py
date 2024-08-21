@@ -110,6 +110,12 @@ class ModelArguments:
         default=False,
         metadata={'help': 'Set to True to freeze the MLP layers of the model.'},
     )
+
+    freeze_mlp_2: bool = field(
+        default=False,
+        metadata={'help': 'Set to True to freeze the retriever MLP layers of the model.'},
+    )
+
     unfreeze_vit_layers: int = field(
         default=0,
         metadata={'help': 'Specify the number of ViT layers to unfreeze. Default is 0.'},

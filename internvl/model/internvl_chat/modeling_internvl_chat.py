@@ -90,6 +90,14 @@ class InternVLChatModel(PreTrainedModel):
             nn.Linear(llm_hidden_size, llm_hidden_size)
         )
 
+        self.mlp2 = nn.Sequential(
+            # maybe remove layernorm
+            nn.LayerNorm(llm_hidden_size),
+            nn.Linear(llm_hidden_size, llm_hidden_size),
+            nn.GELU(),
+            nn.Linear(llm_hidden_size, llm_hidden_size)
+        )
+
         self.img_context_token_id = None
         self.conv_template = get_conv_template(self.template)
         if hasattr(config, 'system_message'):

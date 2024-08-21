@@ -30,7 +30,7 @@ class ContrastiveTrainer(Trainer):
           self.clippy_callback = ClippyCallback()
           self.add_callback(self.clippy_callback)
 
-     def log(self, key, value):
+     def log_to_wandb(self, key, value):
           self.clippy_callback.additional_metrics[key] = value
 
      def compute_loss(self, model, inputs, return_outputs=False):
@@ -83,21 +83,21 @@ class ContrastiveTrainer(Trainer):
           rank = dist.get_rank()
 
           # Gather q_embed and c_embed from all GPUs
-          q_embed_list = [torch.zeros_like(q_embed) for _ in range(world_size)]
-          c_embed_list = [torch.zeros_like(c_embed) for _ in range(world_size)]
+          #q_embed_list = [torch.zeros_like(q_embed) for _ in range(world_size)]
+          #c_embed_list = [torch.zeros_like(c_embed) for _ in range(world_size)]
 
-          dist.all_gather(q_embed_list, q_embed)
-          dist.all_gather(c_embed_list, c_embed)
+          #dist.all_gather(q_embed_list, q_embed)
+          #dist.all_gather(c_embed_list, c_embed)
           
-          q_embed_list[rank] = q_embed
-          c_embed_list[rank] = c_embed
+          # q_embed_list[rank] = q_embed
+          # c_embed_list[rank] = c_embed
 
           # Concatenate the gathered embeddings along the batch dimension
-          q_embed_gathered = torch.cat(q_embed_list, dim=0)
-          c_embed_gathered = torch.cat(c_embed_list, dim=0)
+          q_embed_gathered = q_embed #torch.cat(q_embed_list, dim=0)
+          c_embed_gathered = c_embed #torch.cat(c_embed_list, dim=0)
 
           loss, acc = compute_contrastive_loss(q_embed_gathered,c_embed_gathered)
-          self.log("accuracy", acc.detach().cpu())
+          self.log_to_wandb("accuracy", acc.detach().cpu())
           # torch.cuda.memory._dump_snapshot("/home/b3schnei/memory_snap_8.pickle")
           return loss
 

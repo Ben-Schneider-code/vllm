@@ -116,6 +116,11 @@ class ModelArguments:
         metadata={'help': 'Set to True to freeze the retriever MLP layers of the model.'},
     )
 
+    train_llm_embedding: bool = field(
+        default=False,
+        metadata={'help': 'Set to True to freeze the retriever MLP layers of the model.'},
+    )
+
     unfreeze_vit_layers: int = field(
         default=0,
         metadata={'help': 'Specify the number of ViT layers to unfreeze. Default is 0.'},
@@ -870,8 +875,8 @@ def main():
     # Parse input arguments
     # See all possible arguments in src/transformers/training_args.py
     # If use DeepSpeed zero3, init_dist must before HfArgumentParser
-    launcher = "pytorch"
-    init_dist(launcher=launcher, backend='nccl')
+    # launcher = "pytorch"
+    # init_dist(launcher=launcher, backend='nccl')
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
@@ -909,6 +914,10 @@ def main():
         for param in module.parameters():
             param.requires_grad = False
 
+    def _unfreeze_params(module):
+        for param in module.parameters():
+            param.requires_grad = True
+
     if model_args.freeze_backbone:
         # model.vision_model = model.vision_model.eval()
         _freeze_params(model.vision_model)
@@ -930,6 +939,16 @@ def main():
 
     if model_args.freeze_mlp:
         _freeze_params(model.mlp1)
+
+    if model_args.freeze_mlp_2:
+        _freeze_params(model.mlp_q)
+        _freeze_params(model.mlp_c)
+
+    if model_args.train_llm_embedding:
+        embedding = model.language_model.get_input_embeddings()
+        _unfreeze_params(embedding)
+        # register backwards hook here
+
 
     if model_args.unfreeze_vit_layers != 0:
         layers = model.vision_model.encoder.layers[model_args.unfreeze_vit_layers:]
@@ -981,8 +1000,6 @@ def main():
 
 def test():
     
-    launcher = "pytorch"
-    init_dist(launcher=launcher, backend='nccl')
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
     logger = setup_logger(training_args)

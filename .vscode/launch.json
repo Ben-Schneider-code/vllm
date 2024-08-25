@@ -12,7 +12,7 @@
                 "--include",
                 "localhost:0",
                 "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
-                "~/mllm/config/train_full_model.json"
+                "~/mllm/config/pretrain_mlp.json"
             ],
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",
@@ -20,7 +20,7 @@
             }
         },
         {
-            "name": "Debug DeepSpeed - 2 GPU",
+            "name": "Debug DeepSpeed - 4 GPU",
             "type": "debugpy",
             "request": "launch",
             "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
@@ -28,9 +28,9 @@
             "console": "integratedTerminal",
             "args": [
                 "--include",
-                "localhost:6,7",
+                "localhost:0,2,3,4",
                 "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
-                "~/mllm/config/run_config.json"
+                "~/mllm/config/pretrain_mlp.json"
             ],
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",

@@ -75,12 +75,19 @@ class ContrastiveTrainer(Trainer):
 
           batch_idx = torch.arange(query["input_ids"].shape[0])
            
-          q_embed = query_outputs.hidden_states[-1][batch_idx,query_token_idx].float()
-          c_embed = candidate_outputs.hidden_states[-1][batch_idx,cand_token_idx].float()
+          q_embed = query_outputs.hidden_states[-1][batch_idx,query_token_idx]
+          c_embed = candidate_outputs.hidden_states[-1][batch_idx,cand_token_idx]
+          
+          q_embed_mlp = model.module.mlp_q(q_embed)
+          c_embed_mlp = model.module.mlp_c(c_embed)
+
+          q_embed_mlp_float = q_embed_mlp.float()
+          c_embed_mlp_float = c_embed_mlp.float()
+
 
           # Get the number of GPUs (world_size)
-          world_size = dist.get_world_size()
-          rank = dist.get_rank()
+          #world_size = dist.get_world_size()
+          #rank = dist.get_rank()
 
           # Gather q_embed and c_embed from all GPUs
           #q_embed_list = [torch.zeros_like(q_embed) for _ in range(world_size)]
@@ -93,8 +100,8 @@ class ContrastiveTrainer(Trainer):
           # c_embed_list[rank] = c_embed
 
           # Concatenate the gathered embeddings along the batch dimension
-          q_embed_gathered = q_embed #torch.cat(q_embed_list, dim=0)
-          c_embed_gathered = c_embed #torch.cat(c_embed_list, dim=0)
+          q_embed_gathered = q_embed_mlp_float #torch.cat(q_embed_list, dim=0)
+          c_embed_gathered = c_embed_mlp_float #torch.cat(c_embed_list, dim=0)
 
           loss, acc = compute_contrastive_loss(q_embed_gathered,c_embed_gathered)
           self.log_to_wandb("accuracy", acc.detach().cpu())

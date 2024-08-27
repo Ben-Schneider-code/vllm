@@ -125,7 +125,6 @@ def visualize():
     model
     )
 
-    # Assuming train_dataset is a PyTorch Dataset
     dataset_size = len(train_dataset)
     indices = torch.randperm(dataset_size).tolist()  # Generate a random permutation of indices
     subset_indices = indices[:1000]  # Select the first 1000 indices

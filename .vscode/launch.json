@@ -46,9 +46,11 @@
             "console": "integratedTerminal",
             "args": [
                 "--include",
-                "localhost:3",
+                "localhost:2",
+                "--master_port",
+                "55550",
                 "/home/b3schnei/mllm/internvl/evaluate/visualize_retrieval_error.py",
-                "~/mllm/config/pretrain_mlp.json"
+                "~/mllm/config/eval_mode.json"
             ],
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",

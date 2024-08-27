@@ -947,7 +947,19 @@ def main():
     if model_args.train_llm_embedding:
         embedding = model.language_model.get_input_embeddings()
         _unfreeze_params(embedding)
-        # register backwards hook here
+
+        mask = torch.zeros(model.language_model.get_input_embeddings().num_embeddings, requires_grad=False)
+        mask[tokenizer.convert_tokens_to_ids("<CLS_1>")] = 1
+        mask[tokenizer.convert_tokens_to_ids("<CLS_2>")] = 1
+        mask = mask.reshape((-1,1))
+
+        def create_grad_hook(grad_mask):
+            def grad_hook(grad):
+                gmask_gpu = grad_mask.to(device=grad.device, dtype=grad.dtype)
+                return torch.mul(gmask_gpu, grad)
+            return grad_hook
+
+        embedding.weight.register_hook(create_grad_hook(mask))
 
 
     if model_args.unfreeze_vit_layers != 0:
@@ -1004,13 +1016,6 @@ def test():
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
     logger = setup_logger(training_args)
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
-    model.to(device="cuda:0")
-    pytorch_total_params = sum(p.numel() for p in model.parameters())
-    print(pytorch_total_params)
-
-    print("model loaded")
-
-
 
 if __name__ == '__main__':
     main()

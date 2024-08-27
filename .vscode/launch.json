@@ -38,20 +38,22 @@
             }
         },
         {
-            "name": "Python: Debug pure python",
+            "name": "Eval_with_Visualization",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
+            "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
+            "justMyCode": false,
             "console": "integratedTerminal",
             "args": [
-                "~/mllm/config/run_config.json"
+                "--include",
+                "localhost:3",
+                "/home/b3schnei/mllm/internvl/evaluate/visualize_retrieval_error.py",
+                "~/mllm/config/pretrain_mlp.json"
             ],
-            "justMyCode": false,
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",
                 "WANDB_MODE":"offline"
             }
         }
-
     ]
 }

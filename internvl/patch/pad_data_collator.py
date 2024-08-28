@@ -101,13 +101,15 @@ def contrastive_data_collator(features, pad_id=0):
     
     query_batch = [item["query_tokenized"] for item in features]
     cand_batch = [item["cand_tokenized"] for item in features]
-    
+
     # attach metadata to batch
     meta = [{
             "qid" : item["query"]["id"],
-            "q_image" : item["query"]["image"],
-            "pid" : ["pos_cand"]["id"],
-            "p_image" : item["pos_cand"]["image"]
+            "q_image" : item["query"]["image"]  if "image" in item["query"] else None,
+            "pid" : item["pos_cand"]["id"],
+            "p_image" : item["pos_cand"]["image"] if "image" in item["pos_cand"] else None,
+            "q_conversation" : item["query"]["conversations"],
+            "p_conversation" : item["pos_cand"]["conversations"],
             } for item in features]
 
     query_batch = concat_pad_data_collator(query_batch)

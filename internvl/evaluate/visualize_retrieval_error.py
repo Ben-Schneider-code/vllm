@@ -18,6 +18,8 @@ from internvl.patch import contrastive_data_collator
 from torch.utils.data import Subset
 import torch.nn.functional as F
 
+pred_list = []
+
 def compute_contrastive_loss(q_embeds, p_embeds):  # [batch_size, embed_dim]
     # Normalized features
     q_embeds = F.normalize(q_embeds, dim=-1)
@@ -84,6 +86,13 @@ def compute_loss_with_visualization(self, model, inputs, return_outputs=False):
     c_embed_gathered = c_embed_mlp_float #torch.cat(c_embed_list, dim=0)
 
     loss, acc, top_k = compute_contrastive_loss(q_embed_gathered, c_embed_gathered)
+    top_k_picks = top_k.cpu().tolist()
+
+    global pred_list
+    pred_list.append({
+        "meta" : inputs["meta"],
+        "preds": top_k_picks
+    })
 
     return loss
 
@@ -99,7 +108,7 @@ def prediction_step(
    
     with torch.no_grad():
         with self.compute_loss_context_manager():
-            loss, outputs = self.compute_loss(model, inputs, return_outputs=True)
+            loss = self.compute_loss(model, inputs, return_outputs=True)
         loss = loss.mean().detach()
 
     return (loss, None, None)
@@ -142,5 +151,7 @@ def visualize():
     trainer.predict(
         test_dataset=eval_subset
     )
+
+    torch.save(pred_list, os.path.expanduser("~/viz_dict.pickle"))
 
 visualize()

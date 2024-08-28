@@ -56,6 +56,19 @@
                 "PYTHONPATH": "/home/b3schnei/mllm",
                 "WANDB_MODE":"offline"
             }
+        },
+        {
+            "name": "bundle viz",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/b3schnei/mllm/internvl/evaluate/bundle_visualization_data.py",
+            "console": "integratedTerminal",
+            "args": [],
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "/home/b3schnei/mllm",
+                "WANDB_MODE":"offline"
+            }
         }
     ]
 }

@@ -39,6 +39,8 @@ class ContrastiveTrainer(Trainer):
 
           Subclass and override for custom behavior.
           """
+          # Change this loss fxn away from <CLS> token. 
+          assert(True == False)
           query = inputs["query"]
           candidate = inputs["pos_cand"]
 

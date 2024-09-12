@@ -944,24 +944,6 @@ def main():
         _freeze_params(model.mlp_q)
         _freeze_params(model.mlp_c)
 
-    if model_args.train_llm_embedding:
-        embedding = model.language_model.get_input_embeddings()
-        _unfreeze_params(embedding)
-
-        mask = torch.zeros(model.language_model.get_input_embeddings().num_embeddings, requires_grad=False)
-        mask[tokenizer.convert_tokens_to_ids("<CLS_1>")] = 1
-        mask[tokenizer.convert_tokens_to_ids("<CLS_2>")] = 1
-        mask = mask.reshape((-1,1))
-
-        def create_grad_hook(grad_mask):
-            def grad_hook(grad):
-                gmask_gpu = grad_mask.to(device=grad.device, dtype=grad.dtype)
-                return torch.mul(gmask_gpu, grad)
-            return grad_hook
-
-        embedding.weight.register_hook(create_grad_hook(mask))
-
-
     if model_args.unfreeze_vit_layers != 0:
         layers = model.vision_model.encoder.layers[model_args.unfreeze_vit_layers:]
         for k, v in layers.named_parameters():

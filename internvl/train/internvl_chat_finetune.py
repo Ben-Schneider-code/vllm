@@ -940,10 +940,6 @@ def main():
     if model_args.freeze_mlp:
         _freeze_params(model.mlp1)
 
-    if model_args.freeze_mlp_2:
-        _freeze_params(model.mlp_q)
-        _freeze_params(model.mlp_c)
-
     if model_args.unfreeze_vit_layers != 0:
         layers = model.vision_model.encoder.layers[model_args.unfreeze_vit_layers:]
         for k, v in layers.named_parameters():

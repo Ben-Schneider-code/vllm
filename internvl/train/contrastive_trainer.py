@@ -33,6 +33,7 @@ class ContrastiveTrainer(Trainer):
      def log_to_wandb(self, key, value):
           self.clippy_callback.additional_metrics[key] = value
 
+     # needs to be rewritten
      def compute_loss(self, model, inputs, return_outputs=False):
           """
           How the loss is computed by Trainer. By default, all models return the loss in the first element.

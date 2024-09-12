@@ -34,24 +34,6 @@ def version_cmp(v1, v2, op='eq'):
     op_func = getattr(operator, op)
     return op_func(version.parse(v1), version.parse(v2))
 
-class MLP(nn.Module):
-    def __init__(self, hidden_size):
-        super().__init__()
-        self.lin1 = nn.Linear(hidden_size, hidden_size, bias=False)
-        self.lin2 = nn.Linear(hidden_size, hidden_size, bias=False)
-        
-        
-        self.lin1.weight.data = torch.eye(hidden_size)
-        self.lin2.weight.data = torch.eye(hidden_size)
-        self.activation = nn.GELU()
-    
-    def forward(self, x):
-        x = self.lin1(x)
-        y = self.activation(x)
-        z = self.lin2(y)
-        return z
-    
-
 class InternVLChatModel(PreTrainedModel):
     """
     Base model for training
@@ -106,9 +88,6 @@ class InternVLChatModel(PreTrainedModel):
             nn.GELU(),
             nn.Linear(llm_hidden_size, llm_hidden_size)
         )
-
-        self.mlp_q = MLP(llm_hidden_size)
-        self.mlp_c = MLP(llm_hidden_size)
 
         self.img_context_token_id = None
         self.conv_template = get_conv_template(self.template)

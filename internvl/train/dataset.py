@@ -303,7 +303,7 @@ def preprocess(
     conversations = []
     for i, source in enumerate(sources):
         if roles[source[0]['from']] != conv.roles[0]:
-            # Skip the first one if it is not from human
+            # Skip the first one if it is not from`` human
             source = source[1:]
 
         conv.messages = []

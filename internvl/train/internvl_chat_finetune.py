@@ -54,15 +54,6 @@ from torch.profiler import profile, record_function, ProfilerActivity
 replace_llama_rmsnorm_with_fused_rmsnorm()
 # replace_train_sampler()
 
-# Try to import petrel_client for image loading, fallback to PIL if unavailable
-try:
-    from petrel_client.client import Client
-    from petrel_client.common.config import Config
-    has_tcs_loader = True
-except ImportError as E:
-    print('petrel_client is not installed. Using PIL to load images.')
-    has_tcs_loader = False
-
 # Set constants for image processing and logging
 IGNORE_INDEX = -100
 Image.MAX_IMAGE_PIXELS = None
@@ -580,7 +571,107 @@ class LazySupervisedDataset(Dataset):
                 i = random.randint(0, len(self.raw_data) - 1)
         return ret
 
+
 class ContrastiveDataset(LazySupervisedDataset):
+    """
+    **An adapter must return a data element in the following format**
+    {
+            "query": {
+                optional<"image": str_path>,
+                "id": optional<any>,
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": str
+                    },
+                    {
+                        "from": "gpt",
+                        "value": str
+                    }
+                ]
+            },
+
+            "pos_cand": {
+                optional<"image": str_path>,
+                "id": optional<any>,
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": str
+                    },
+                    {
+                    "from": "gpt",
+                    "value": str
+                    }
+                ]
+            }
+    }
+    """
+
+
+    def __init__(
+        self,
+        adapter,
+        template_name,
+        meta,
+        tokenizer,
+        tcs_loader,
+        ds_name,
+        num_image_token,
+        image_size=224,
+        is_train=True,
+        pad2square=False,
+        group_by_length=False,
+        dynamic_image_size=False,
+        use_thumbnail=False,
+        min_dynamic_patch=1,
+        max_dynamic_patch=6,
+        min_num_frame=4,  # for video data
+        max_num_frame=12,  # for video data
+        sampling_method='rand',  # for video data
+        repeat_time=1,
+        normalize_type='imagenet',
+        random_seed=0,
+    ):
+        self.ds_name = ds_name
+        self.tokenizer = tokenizer
+        self.template_name = template_name
+        self.num_image_token = num_image_token
+        self.image_size = image_size
+        self.is_train = is_train
+        self.pad2square = pad2square
+        self.max_num_frame = max_num_frame
+        self.min_num_frame = min_num_frame
+        self.sampling_method = sampling_method
+        self.adapter = adapter
+        self.root = meta
+        self.cached_data_dict = {}
+        self.tcs_loader = tcs_loader
+        self.group_by_length = group_by_length
+        self.dynamic_image_size = dynamic_image_size
+        self.use_thumbnail = use_thumbnail
+        self.min_dynamic_patch = min_dynamic_patch
+        self.max_dynamic_patch = max_dynamic_patch
+        self.normalize_type = normalize_type
+    
+    def __len__(self):
+        return len(self.adapter)
+
+    def tokenize_input(self, item):
+        if "image" in item:
+            return super().multi_modal_get_item(item)
+        else:
+            return super().pure_text_get_item(item)
+
+    def __getitem__(self, i) -> Dict[str, torch.Tensor]:
+        data_item = self.adapter[i]
+        query = data_item["query"]
+        cand = data_item["pos_cand"]
+        data_item["query_tokenized"] = self.tokenize_input(query)
+        data_item["cand_tokenized"] = self.tokenize_input(cand)
+        return data_item
+
+class MBEIRDataset(LazySupervisedDataset):
     
     def __init__(
         self,
@@ -657,10 +748,10 @@ def build_contrastive_dataset(
     normalize_type='imagenet',
 ):  
     
-    return ContrastiveDataset(
-            data_args,
+    mbeir_dataset =  ContrastiveDataset(
+            MbeirAdapter(data_args=data_args),
             data_args.conv_style,
-            data_args.mbeir_root,
+            None,
             tokenizer,
             tcs_loader,
             ds_name="mbeir",
@@ -677,6 +768,7 @@ def build_contrastive_dataset(
             normalize_type=normalize_type,
             random_seed=0,
         )
+    return mbeir_dataset
     
 
 def build_datasets(
@@ -748,7 +840,7 @@ def load_model(model_args, data_args, training_args, logger):
     logger.info(f'Number of added tokens: {num_new_tokens}')
 
     img_context_token_id = tokenizer.convert_tokens_to_ids(IMG_CONTEXT_TOKEN)
-    tcs_loader = TCSLoader('~/petreloss.conf') if has_tcs_loader else None
+    tcs_loader = None
 
     if model_args.model_name_or_path is not None:
         logger.info('Loading InternVLChatModel...')

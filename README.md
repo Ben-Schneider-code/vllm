@@ -27,7 +27,7 @@
 
 ## Questions:
 - What is the ideal way to pass instructions to InternVL, can we make it similar to NV-embed?
-
+- Should I be using the **dynamic_image_size** flag while training my models to compensate for different sized images in dataset?
 ### Resources:  
 [NV-Embed](https://arxiv.org/abs/2405.17428)  
 [LLM2VEC](https://arxiv.org/abs/2404.05961)  

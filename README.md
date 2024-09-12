@@ -1,48 +1,22 @@
-# InternVL-Chat
+## Building a Decorder-only VLM Retriever
 
-This folder contains the implementation of the InternVL-Chat.
+### To Do  
+- **Add a basic dataset**
+    - Conceptual captions is already downloaded.
+    - Across the board, it doesn't seem like large data is required, Nvidia paper and LLM2VEC only require a few thousand steps (batch_size=128).  
+- **Build a version of InternVL that follows NVidia's decoder-only appraoch.**
+    - *Ablate* to show which techniques add value:
+    - Remove casual attention [use all 1s for attention mask].
+    - Using last token embed, average token embed, Attention into dense on hidden states.
+    - Use LORA on the base model.
+        - Nvida paper provides settings.
+    - Instruction tuning (?) The NVidia paper uses it on queries.
+    - Compare vs. CLIP on MSCOCO.
+- **Long-run potentiall improvements**
+    - Better data, NVidia paper provides hard-negatives dereived from an encoder model. We could use **CLIP** in a similar way?
+        - [NV-Retriever](https://arxiv.org/pdf/2407.15831) provides insight on hard negative mining.
 
-## 🛠️ Installation
-
-See [INSTALLATION.md](../INSTALLATION.md)
-
-In addition, using this codebase requires executing the following steps:
-
-- Install other requirements:
-
-  ```bash
-  pip install --upgrade pip  # enable PEP 660 support
-  pip install -e .
-  ```
-
-## 📖 Documents
-
-- InternVL 2.0
-
-  - Introduction [\[link\]](https://internvl.readthedocs.io/en/latest/internvl2.0/introduction.html)
-  - Quick Start [\[link\]](https://internvl.readthedocs.io/en/latest/internvl2.0/quick_start.html)
-  - Finetune [\[link\]](https://internvl.readthedocs.io/en/latest/internvl2.0/finetune.html)
-  - Evaluation [\[link\]](https://internvl.readthedocs.io/en/latest/internvl2.0/evaluation.html)
-  - Deployment [\[link\]](https://internvl.readthedocs.io/en/latest/internvl2.0/deployment.html)
-
-- InternVL 1.5
-
-  - Introduction [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.5/introduction.html)
-  - Quick Start [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.5/quick_start.html)
-  - Finetune [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.5/finetune.html)
-  - Evaluation [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.5/evaluation.html)
-  - Deployment [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.5/deployment.html)
-
-- InternVL 1.2
-
-  - Introduction [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.2/introduction.html)
-  - Quick Start [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.2/quick_start.html)
-  - Reproduce [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.2/reproduce.html)
-  - Finetune [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.2/finetune.html)
-  - Evaluation [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.2/evaluation.html)
-
-- InternVL 1.1
-
-  - Introduction [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.1/introduction.html)
-  - Quick Start [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.1/quick_start.html)
-  - Evaluation [\[link\]](https://internvl.readthedocs.io/en/latest/internvl1.1/evaluation.html)
+### Resources:  
+[NV-Embed](https://arxiv.org/abs/2405.17428)  
+[LLM2VEC](https://arxiv.org/abs/2404.05961)  
+[NV-Retriever](https://arxiv.org/pdf/2407.15831) - Haven't read yet. 

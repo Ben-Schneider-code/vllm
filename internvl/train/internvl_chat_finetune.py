@@ -858,7 +858,7 @@ def load_model(model_args, data_args, training_args, logger):
     tokenizer.model_max_length = data_args.max_seq_length
     token_list = [IMG_START_TOKEN, IMG_END_TOKEN, IMG_CONTEXT_TOKEN,
                   QUAD_START_TOKEN, QUAD_END_TOKEN, REF_START_TOKEN,
-                  REF_END_TOKEN, BOX_START_TOKEN, BOX_END_TOKEN, QUERY_TOKEN, CANDIDATE_TOKEN]
+                  REF_END_TOKEN, BOX_START_TOKEN, BOX_END_TOKEN]
     num_new_tokens = tokenizer.add_tokens(token_list, special_tokens=True)
     logger.info(f'Number of added tokens: {num_new_tokens}')
 

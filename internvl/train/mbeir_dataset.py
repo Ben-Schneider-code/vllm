@@ -500,7 +500,7 @@ class MBEIRCandidatePoolCollator(MBEIRCollatorBase):
         assert bs == processed_batch["image_mask_batched"].size(0)
         return processed_batch
 
-class MbeirAdapter(torch.utils.nn.Dataset):
+class MbeirAdapter(torch.utils.data.Dataset):
     def __init__(self,
                  data_args
                  ):

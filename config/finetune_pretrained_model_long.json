@@ -36,7 +36,7 @@
     "remove_unused_columns": false,
     "use_thumbnail": true,
     "ps_version": "v2",
-    "deepspeed": "zero_off.json",
+    "deepspeed": "./deepspeed/zero_off.json",
     "report_to": "wandb",
     "mbeir_root": "/home/b3schnei/M-BEIR",
     "mbeir_train_root": "/home/b3schnei/M-BEIR/query/union_train/mbeir_union_up_train.jsonl",

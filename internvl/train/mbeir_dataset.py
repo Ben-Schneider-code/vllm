@@ -13,6 +13,7 @@ import torch
 from PIL import Image
 
 from collections import defaultdict
+import torch.utils
 from torch.utils.data import Dataset
 from typeguard import typechecked
 
@@ -499,7 +500,7 @@ class MBEIRCandidatePoolCollator(MBEIRCollatorBase):
         assert bs == processed_batch["image_mask_batched"].size(0)
         return processed_batch
 
-class MbeirAdapter():
+class MbeirAdapter(torch.utils.nn.Dataset):
     def __init__(self,
                  data_args
                  ):

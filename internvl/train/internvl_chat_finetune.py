@@ -15,6 +15,7 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import transformers
+from datasets.conceptual_captions import ConceptualCaptionsAdapter
 from internvl.dist_utils import init_dist
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
 from internvl.model.internvl_chat import (InternVisionConfig,
@@ -28,7 +29,7 @@ from internvl.train.constants import (BOX_END_TOKEN, BOX_START_TOKEN,
                                       IMG_CONTEXT_TOKEN, IMG_END_TOKEN,
                                       IMG_START_TOKEN, QUAD_END_TOKEN,
                                       QUAD_START_TOKEN, REF_END_TOKEN,
-                                      REF_START_TOKEN, QUERY_TOKEN, CANDIDATE_TOKEN)
+                                      REF_START_TOKEN)
 from internvl.train.contrastive_trainer import ContrastiveTrainer
 from internvl.train.dataset import (ConcatDataset, TCSLoader,
                                     WeightedConcatDataset, build_transform,
@@ -746,29 +747,51 @@ def build_contrastive_dataset(
     min_dynamic_patch=1,
     max_dynamic_patch=12,
     normalize_type='imagenet',
+    dataset_name = 'mbeir'
 ):  
-    
-    mbeir_dataset =  ContrastiveDataset(
-            MbeirAdapter(data_args=data_args),
-            data_args.conv_style,
-            None,
-            tokenizer,
-            tcs_loader,
-            ds_name="mbeir",
-            num_image_token=model.num_image_token,
-            image_size=data_args.force_image_size,
-            is_train=True,
-            pad2square=data_args.pad2square,
-            group_by_length=group_by_length,
-            dynamic_image_size=dynamic_image_size,
-            use_thumbnail=use_thumbnail,
-            min_dynamic_patch=min_dynamic_patch,
-            max_dynamic_patch=max_dynamic_patch,
-            repeat_time=1,
-            normalize_type=normalize_type,
-            random_seed=0,
-        )
-    return mbeir_dataset
+    if dataset_name == 'mbeir':
+        dataset =  ContrastiveDataset(
+                MbeirAdapter(data_args=data_args),
+                data_args.conv_style,
+                None,
+                tokenizer,
+                tcs_loader,
+                ds_name="mbeir",
+                num_image_token=model.num_image_token,
+                image_size=data_args.force_image_size,
+                is_train=True,
+                pad2square=data_args.pad2square,
+                group_by_length=group_by_length,
+                dynamic_image_size=dynamic_image_size,
+                use_thumbnail=use_thumbnail,
+                min_dynamic_patch=min_dynamic_patch,
+                max_dynamic_patch=max_dynamic_patch,
+                repeat_time=1,
+                normalize_type=normalize_type,
+                random_seed=0,
+            )
+    elif dataset_name == 'cc':
+        dataset = ContrastiveDataset(
+                ConceptualCaptionsAdapter(),
+                data_args.conv_style,
+                None,
+                tokenizer,
+                tcs_loader,
+                ds_name="conceptual_captions",
+                num_image_token=model.num_image_token,
+                image_size=data_args.force_image_size,
+                is_train=True,
+                pad2square=data_args.pad2square,
+                group_by_length=group_by_length,
+                dynamic_image_size=dynamic_image_size,
+                use_thumbnail=use_thumbnail,
+                min_dynamic_patch=min_dynamic_patch,
+                max_dynamic_patch=max_dynamic_patch,
+                repeat_time=1,
+                normalize_type=normalize_type,
+                random_seed=0,
+            )
+    return dataset
     
 
 def build_datasets(
@@ -1080,13 +1103,27 @@ def main():
         trainer.save_metrics('train', metrics)
         trainer.save_state()
 
-def test():
+def greedy_decode():
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
     logger = setup_logger(training_args)
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
+    
+    from torch.utils.data import DataLoader
+    
+    dataset = build_contrastive_dataset(
+    data_args,
+    tokenizer,
+    tcs_loader,
+    model,
+    dataset_name="cc"
+    )
+    
+    dl = iter(DataLoader(dataset=dataset, batch_size=2, shuffle=False, collate_fn=contrastive_data_collator))
+    item = next(dl)
+    print(item)
 
 if __name__ == '__main__':
-    main()
-    #test()
+    #main()
+    greedy_decode()

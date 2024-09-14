@@ -31,7 +31,7 @@ from internvl.train.constants import (BOX_END_TOKEN, BOX_START_TOKEN,
                                       QUAD_START_TOKEN, REF_END_TOKEN,
                                       REF_START_TOKEN)
 from internvl.train.contrastive_trainer import ContrastiveTrainer
-from internvl.train.dataset import (ConcatDataset, TCSLoader,
+from internvl.train.dataset import (ConcatDataset,
                                     WeightedConcatDataset, build_transform,
                                     dynamic_preprocess, preprocess,
                                     preprocess_internlm, preprocess_mpt,
@@ -48,7 +48,7 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils.logging import (enable_default_handler,
                                         enable_explicit_format, set_verbosity)
 
-from torch.profiler import profile, record_function, ProfilerActivity
+#from torch.profiler import profile, record_function, ProfilerActivity
 
 # Apply necessary patches for the transformers library
 # TODO: move these out of global
@@ -151,6 +151,12 @@ class ModelArguments:
                           'Please use `v2` to fix the bug of transposed image.'}
     )
 
+@dataclass
+class VLMTrainingArguments(TrainingArguments):
+    loss_type: Optional[str] = field(
+        default=None,
+        metadata={"help": "Loss type used in ContrastiveTrainer"}
+    )
 
 @dataclass
 class DataTrainingArguments:
@@ -993,7 +999,7 @@ def main():
     # launcher = "pytorch"
     # init_dist(launcher=launcher, backend='nccl')
     
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
 
     logger = setup_logger(training_args)

@@ -8,7 +8,7 @@ import torch.distributed as dist
 from transformers.integrations import WandbCallback
 import os
 
-class ClippyCallback(WandbCallback):
+class WandbLogger(WandbCallback):
 
     def __init__(self):
         super().__init__()
@@ -27,14 +27,14 @@ class ContrastiveTrainer(Trainer):
 
      def __init__(self, *args, **kwargs):
           super().__init__(*args, **kwargs)
-          self.clippy_callback = ClippyCallback()
-          self.add_callback(self.clippy_callback)
+          self.loss_type = kwargs['args'].loss_type
+          self.wandb_callback = WandbLogger()
+          self.add_callback(self.wandb_callback)
 
      def log_to_wandb(self, key, value):
-          self.clippy_callback.additional_metrics[key] = value
+          self.wandb_callback.additional_metrics[key] = value
 
      def last_token_loss(self, model, inputs, return_outputs=False):
-
 
           query = inputs["query"]
           candidate = inputs["pos_cand"]
@@ -51,117 +51,50 @@ class ContrastiveTrainer(Trainer):
           query_outputs : CausalLMOutputWithPast = model(**query, output_hidden_states=True)
           candidate_outputs : CausalLMOutputWithPast = model(**candidate, output_hidden_states=True)
           
+          # TODO add back in the skip logits computation optimization
           # ensure logits computation was skipped for memory / speed
           # saves memory, requires changing a line the transformers lib implementation of qwen
           # (or other LLM in used)
           #assert(query_outputs.logits is None)
           #assert(candidate_outputs.logits is None)
 
-          q_hidden_state = query_outputs.last_hidden_state 
-          c_hidden_state = candidate_outputs.last_hidden_state
+          q_eos_token_emb = get_last_token_embed(query["input_ids"], query_outputs.hidden_states[-1], 0)
+          c_eos_token_emb= get_last_token_embed(candidate["input_ids"], candidate_outputs.hidden_states[-1], 0)
 
           # Get the number of GPUs (world_size)
-          #world_size = dist.get_world_size()
-          #rank = dist.get_rank()
+          world_size = dist.get_world_size()
+          rank = dist.get_rank()
 
           # Gather q_embed and c_embed from all GPUs
-          #q_embed_list = [torch.zeros_like(q_embed) for _ in range(world_size)]
-          #c_embed_list = [torch.zeros_like(c_embed) for _ in range(world_size)]
+          q_global = [torch.zeros_like(q_eos_token_emb) for _ in range(world_size)]
+          c_global = [torch.zeros_like(c_eos_token_emb) for _ in range(world_size)]
 
-          #dist.all_gather(q_embed_list, q_embed)
-          #dist.all_gather(c_embed_list, c_embed)
+          dist.all_gather(q_global, q_eos_token_emb)
+          dist.all_gather(c_global, c_eos_token_emb)
           
-          # q_embed_list[rank] = q_embed
-          # c_embed_list[rank] = c_embed
+          q_global[rank] = q_eos_token_emb
+          c_global[rank] = c_eos_token_emb
 
           # Concatenate the gathered embeddings along the batch dimension
-          q_embed_gathered = None #torch.cat(q_embed_list, dim=0)
-          c_embed_gathered = None #torch.cat(c_embed_list, dim=0)
+          q_global = torch.cat(q_global, dim=0)
+          c_global = torch.cat(c_global, dim=0)
 
-          loss, acc = compute_contrastive_loss(q_embed_gathered,c_embed_gathered)
-          self.log_to_wandb("accuracy", acc.detach().cpu())
+          loss_global, acc_global = compute_contrastive_loss(q_global, c_global)
+          loss_local, acc_local = compute_contrastive_loss(q_eos_token_emb.detach(), c_eos_token_emb.detach())
 
-          return loss
+          self.log_to_wandb("global_accuracy", acc_global.detach())
+          self.log_to_wandb("global_loss", acc_global.detach())
+          self.log_to_wandb("local_accuracy", acc_local)
+          self.log_to_wandb("local_loss", loss_local)
 
-     # needs to be rewritten
+          return loss_global
+
      def compute_loss(self, model, inputs, return_outputs=False):
-          """
-          How the loss is computed by Trainer. By default, all models return the loss in the first element.
-
-          Subclass and override for custom behavior.
-          """
-          return self.last_token_loss(model, inputs, return_outputs=return_outputs)
-          # Change this loss fxn away from <CLS> token. 
-          assert(True == False)
-          query = inputs["query"]
-          candidate = inputs["pos_cand"]
-
-          query_token_id = self.tokenizer.convert_tokens_to_ids("<CLS_1>")
-          cand_token_id = self.tokenizer.convert_tokens_to_ids("<CLS_2>")
-
-          query_mask = (query["input_ids"] == query_token_id).to(torch.long)
-          cand_mask = (candidate["input_ids"] == cand_token_id).to(torch.long)
-
-          # found exactly BATCH_SIZE special tokens.
-          assert(torch.sum(query_mask) == query_mask.shape[0])
-          assert(torch.sum(cand_mask) == cand_mask.shape[0])
-
-          query_token_idx = torch.argmax(query_mask, dim=1)
-          cand_token_idx = torch.argmax(cand_mask, dim=1)
-
-          # torch.cuda.memory._record_memory_history(max_entries=40)
-
-          # MEMORY OPTIMIZATIONS
-          # --------------------
-          # make sure neither of these have any "labels" key
-          # skips the loss computation
-          query.pop("labels")
-          candidate.pop("labels")
-          # ensure that sequences are **not** padded to contexzt length
-          query_outputs : CausalLMOutputWithPast = model(**query, output_hidden_states=True)
-          candidate_outputs : CausalLMOutputWithPast = model(**candidate, output_hidden_states=True)
+          if self.loss_type == "last_token":
+               return self.last_token_loss(model, inputs, return_outputs=return_outputs)
+          else:
+               raise Exception("Loss type not implemented")
           
-          # ensure logits computation was skipped for memory / speed
-          # saves memory, requires changing a line the transformers lib implementation of qwen
-          # (or other LLM in used)
-          assert(query_outputs.logits is None)
-          assert(candidate_outputs.logits is None)
-
-          batch_idx = torch.arange(query["input_ids"].shape[0])
-           
-          q_embed = query_outputs.hidden_states[-1][batch_idx,query_token_idx]
-          c_embed = candidate_outputs.hidden_states[-1][batch_idx,cand_token_idx]
-          
-          q_embed_mlp = model.module.mlp_q(q_embed)
-          c_embed_mlp = model.module.mlp_c(c_embed)
-
-          q_embed_mlp_float = q_embed_mlp.float()
-          c_embed_mlp_float = c_embed_mlp.float()
-
-
-          # Get the number of GPUs (world_size)
-          #world_size = dist.get_world_size()
-          #rank = dist.get_rank()
-
-          # Gather q_embed and c_embed from all GPUs
-          #q_embed_list = [torch.zeros_like(q_embed) for _ in range(world_size)]
-          #c_embed_list = [torch.zeros_like(c_embed) for _ in range(world_size)]
-
-          #dist.all_gather(q_embed_list, q_embed)
-          #dist.all_gather(c_embed_list, c_embed)
-          
-          # q_embed_list[rank] = q_embed
-          # c_embed_list[rank] = c_embed
-
-          # Concatenate the gathered embeddings along the batch dimension
-          q_embed_gathered = q_embed_mlp_float #torch.cat(q_embed_list, dim=0)
-          c_embed_gathered = c_embed_mlp_float #torch.cat(c_embed_list, dim=0)
-
-          loss, acc = compute_contrastive_loss(q_embed_gathered,c_embed_gathered)
-          self.log_to_wandb("accuracy", acc.detach().cpu())
-          # torch.cuda.memory._dump_snapshot("/home/b3schnei/memory_snap_8.pickle")
-          return loss
-
      def _get_train_sampler(self) -> Optional[torch.utils.data.Sampler]:
           return RandomSampler(self.train_dataset)
      
@@ -182,6 +115,16 @@ def compute_contrastive_loss(q_embeds, p_embeds):  # [batch_size, embed_dim]
 
     return loss, accuracy
 
-def get_last_token_embed(input_ids, hidden_state):
-    print(input_ids)
-    print(hidden_state)
+def get_last_token_embed(input_ids, hidden_state, padding_token_id):
+    # Find the position of the last non-padding token for each sequence
+    mask = input_ids != padding_token_id  # Create a mask where padding tokens are False
+    last_token_pos = mask.sum(dim=1) - 1  # Get the index of the last non-padding token
+
+    # Create a range tensor for batch indexing
+    batch_size = input_ids.size(0)
+    batch_range = torch.arange(batch_size, device=input_ids.device)
+
+    # Extract the last token embedding for each sequence
+    last_token_embeds = hidden_state[batch_range, last_token_pos]
+
+    return last_token_embeds

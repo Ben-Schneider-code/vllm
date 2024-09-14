@@ -12,7 +12,7 @@
                 "--include",
                 "localhost:4",
                 "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
-                "~/mllm/config/pretrain_mlp.json"
+                "~/mllm/config/debug.json"
             ],
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",

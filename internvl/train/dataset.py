@@ -2,7 +2,7 @@ import io
 
 import torch.utils
 from transformers.trainer_pt_utils import LabelSmoother
-
+import warnings
 IGNORE_TOKEN_ID = LabelSmoother.ignore_index
 import os
 import random
@@ -466,11 +466,10 @@ def preprocess_mpt(
         if cur_len < tokenizer.model_max_length:
             if cur_len != total_len:
                 target[:] = IGNORE_TOKEN_ID
-                print(
+                warnings.warn(
                     f'WARNING: tokenization mismatch: {cur_len} vs. {total_len}.'
                     f' #turn = {len(turns) - 1}. (ignored). This dataset is {ds_name}.'
                 )
-                sys.stdout.flush()
 
     return dict(
         input_ids=input_ids,

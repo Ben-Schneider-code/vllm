@@ -645,7 +645,7 @@ class ContrastiveDataset(LazySupervisedDataset):
         self.min_num_frame = min_num_frame
         self.sampling_method = sampling_method
         self.adapter = adapter
-        self.root = meta
+        self.root = adapter.root
         self.cached_data_dict = {}
         self.tcs_loader = tcs_loader
         self.group_by_length = group_by_length
@@ -1022,16 +1022,13 @@ def main():
     data_args,
     tokenizer,
     tcs_loader,
-    model
+    model,
+    dataset_name="cc"
     )
 
     def _freeze_params(module):
         for param in module.parameters():
             param.requires_grad = False
-
-    def _unfreeze_params(module):
-        for param in module.parameters():
-            param.requires_grad = True
 
     if model_args.freeze_backbone:
         # model.vision_model = model.vision_model.eval()
@@ -1119,11 +1116,38 @@ def greedy_decode():
     model,
     dataset_name="cc"
     )
-    
-    dl = iter(DataLoader(dataset=dataset, batch_size=2, shuffle=False, collate_fn=contrastive_data_collator))
+
+    trainer = ContrastiveTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=dataset,
+        eval_dataset=None,
+        tokenizer=tokenizer,
+        data_collator=contrastive_data_collator
+    )
+
+    model = trainer.model.to("cuda")
+
+    dl = iter(DataLoader(dataset=dataset, batch_size=1, shuffle=False, collate_fn=contrastive_data_collator))
     item = next(dl)
-    print(item)
+    item = trainer._prepare_input(item)
+    item = item['pos_cand']
+    item.pop('labels')
+    im_end_token_id = tokenizer.convert_tokens_to_ids('<|im_end|>')
+    idx = -1
+    for _ in range(400):
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16), torch.no_grad():
+            out = model(**item)
+            next_token_logits = out['logits'][0,-1,:]
+            idx = torch.argmax(next_token_logits, dim=-1).reshape((1,1))
+            item["input_ids"] = torch.cat((item["input_ids"], idx), dim=-1)
+            if idx == im_end_token_id: break
+
+    out = tokenizer.batch_decode(item["input_ids"])
+    print("\n\n\n")
+    print(out)
+    print("\n\n\n")
 
 if __name__ == '__main__':
-    #main()
-    greedy_decode()
+    main()
+    #greedy_decode()

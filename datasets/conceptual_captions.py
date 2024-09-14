@@ -41,8 +41,8 @@ class ConceptualCaptionsAdapter(torch.utils.data.Dataset):
 
     def __init__(self):      
         assert "CC_ROOT" in os.environ, "Environment variable 'CC_ROOT' is not set"
-        self.dataset_root = os.environ["CC_ROOT"]
-        with open(os.path.join(self.dataset_root, "meta.json"), 'rb') as f:
+        self.root = os.environ["CC_ROOT"]
+        with open(os.path.join(self.root, "meta.json"), 'rb') as f:
             self.meta = orjson.loads(f.read())
         
 
@@ -52,25 +52,36 @@ class ConceptualCaptionsAdapter(torch.utils.data.Dataset):
     # Currently the modality is image -> text
     def __getitem__(self, idx):
         metadata = self.meta[idx]
-        image = os.path.join(self.dataset_root, metadata["image"])
+        image = metadata["image"]
         # is it okay to not add any gpt msg?
         formatted_item = {
             "id": metadata["id"],
             "url": metadata["url"], 
             "query": {
+                "id": metadata["id"],
                 "conversations": [
                     {
                         "from": "human",
-                        "value": "Intruction: find an image that matches this caption. Caption: " + metadata["caption"] 
+                        "value": "Intruction: What kind of image would this caption be used for? Caption: " + metadata["caption"] 
+
+                    },
+                    {
+                        "from": "gpt",
+                        "value": ""
                     }
                 ]
             },
             "pos_cand": {
+                "id": metadata["id"],
                 "image": image,
                 "conversations": [
                     {
                         "from": "human",
-                        "value": "Describe this image."
+                        "value": "Describe this image in detail."
+                    },
+                    {
+                        "from": "gpt",
+                        "value": ""
                     }
                 ]
             }

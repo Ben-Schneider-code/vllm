@@ -1,6 +1,9 @@
 ## Building a Decorder-only VLM Retriever
 ### Experiments
 - Using CC dataset and LORA with params from NVidia paper run the following grid.  
+- **Note** llm2vec uses a mask on the embedding over pad tokens (for pooling). But applies full attn (even over padded tokens) using flash attn.  
+- **Note** maybe change how the tokenization works. I.e. use a different system message, etc.
+
 
 | Mask        | Pooling    |
 |-------------|------------|

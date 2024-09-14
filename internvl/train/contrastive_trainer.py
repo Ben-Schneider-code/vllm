@@ -33,6 +33,56 @@ class ContrastiveTrainer(Trainer):
      def log_to_wandb(self, key, value):
           self.clippy_callback.additional_metrics[key] = value
 
+     def last_token_loss(self, model, inputs, return_outputs=False):
+
+
+          query = inputs["query"]
+          candidate = inputs["pos_cand"]
+
+          # torch.cuda.memory._record_memory_history(max_entries=40)
+
+          # MEMORY OPTIMIZATIONS
+          # --------------------
+          # make sure neither of these have any "labels" key
+          # skips the loss computation
+          query.pop("labels")
+          candidate.pop("labels")
+          # ensure that sequences are **not** padded to contexzt length
+          query_outputs : CausalLMOutputWithPast = model(**query, output_hidden_states=True)
+          candidate_outputs : CausalLMOutputWithPast = model(**candidate, output_hidden_states=True)
+          
+          # ensure logits computation was skipped for memory / speed
+          # saves memory, requires changing a line the transformers lib implementation of qwen
+          # (or other LLM in used)
+          #assert(query_outputs.logits is None)
+          #assert(candidate_outputs.logits is None)
+
+          q_hidden_state = query_outputs.last_hidden_state 
+          c_hidden_state = candidate_outputs.last_hidden_state
+
+          # Get the number of GPUs (world_size)
+          #world_size = dist.get_world_size()
+          #rank = dist.get_rank()
+
+          # Gather q_embed and c_embed from all GPUs
+          #q_embed_list = [torch.zeros_like(q_embed) for _ in range(world_size)]
+          #c_embed_list = [torch.zeros_like(c_embed) for _ in range(world_size)]
+
+          #dist.all_gather(q_embed_list, q_embed)
+          #dist.all_gather(c_embed_list, c_embed)
+          
+          # q_embed_list[rank] = q_embed
+          # c_embed_list[rank] = c_embed
+
+          # Concatenate the gathered embeddings along the batch dimension
+          q_embed_gathered = None #torch.cat(q_embed_list, dim=0)
+          c_embed_gathered = None #torch.cat(c_embed_list, dim=0)
+
+          loss, acc = compute_contrastive_loss(q_embed_gathered,c_embed_gathered)
+          self.log_to_wandb("accuracy", acc.detach().cpu())
+
+          return loss
+
      # needs to be rewritten
      def compute_loss(self, model, inputs, return_outputs=False):
           """
@@ -40,6 +90,7 @@ class ContrastiveTrainer(Trainer):
 
           Subclass and override for custom behavior.
           """
+          return self.last_token_loss(model, inputs, return_outputs=return_outputs)
           # Change this loss fxn away from <CLS> token. 
           assert(True == False)
           query = inputs["query"]
@@ -130,3 +181,7 @@ def compute_contrastive_loss(q_embeds, p_embeds):  # [batch_size, embed_dim]
     accuracy = (max_idxs == sim_targets).sum() / bs
 
     return loss, accuracy
+
+def get_last_token_embed(input_ids, hidden_state):
+    print(input_ids)
+    print(hidden_state)

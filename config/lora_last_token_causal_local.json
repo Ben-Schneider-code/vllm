@@ -36,9 +36,9 @@
   "remove_unused_columns": false,
   "use_thumbnail": true,
   "ps_version": "v2",
-  "deepspeed": "./deepspeed/zero_stage3_config_2.json",
+  "deepspeed": "./deepspeed/zero_lora.json",
   "report_to": "wandb",
-  "attn_mask": "bidirectional",
+  "attn_mask": "causal",
   "loss_type": "last_token",
   "gather_loss": false
 }

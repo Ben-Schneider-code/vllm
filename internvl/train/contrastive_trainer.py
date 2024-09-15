@@ -78,6 +78,10 @@ class ContrastiveTrainer(Trainer):
           """
           Compute the loss by gathering across GPUs.
           """
+
+          q_emb = q_emb.float()
+          c_emb = c_emb.float()
+
            # Get the number of GPUs (world_size)
           world_size = dist.get_world_size()
           rank = dist.get_rank()
@@ -109,11 +113,13 @@ class ContrastiveTrainer(Trainer):
           """
           Compute the loss locally on each GPU, average later.
           """
+          q_emb = q_emb.float()
+          c_emb = c_emb.float()
 
           local_loss, local_acc = compute_contrastive_loss(q_emb, c_emb)
 
-          self.log_to_wandb("global_accuracy", local_acc.detach())
-          self.log_to_wandb("global_loss", local_acc.detach())
+          self.log_to_wandb("local_accuracy", local_acc.detach())
+          self.log_to_wandb("local_loss", local_loss.detach())
 
           return local_loss, local_acc
 

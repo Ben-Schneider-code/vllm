@@ -12,7 +12,7 @@ import transformers
 from internvl.conversation import get_conv_template
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
 from internvl.model.phi3.modeling_phi3 import Phi3ForCausalLM
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, get_peft_model, TaskType
 from torch import nn
 from torch.nn import CrossEntropyLoss
 from transformers import (AutoModel, GenerationConfig, LlamaForCausalLM,
@@ -129,7 +129,7 @@ class InternVLChatModel(PreTrainedModel):
             target_modules=target_modules,
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
-            task_type='CAUSAL_LM'
+            task_type=TaskType.SEQ_2_SEQ_LM #TODO: figure out the difference between 'CAUSAL_LM' and 'SEQ_2_SEQ_LM' here
         )
         self.language_model = get_peft_model(self.language_model, lora_config)
         self.language_model.enable_input_require_grads()

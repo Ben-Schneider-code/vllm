@@ -27,7 +27,6 @@ class ContrastiveTrainer(Trainer):
 
      def __init__(self, *args, **kwargs):
           super().__init__(*args, **kwargs)
-          self.loss_type = kwargs['args'].loss_type
           self.wandb_callback = WandbLogger()
           self.add_callback(self.wandb_callback)
 
@@ -61,36 +60,13 @@ class ContrastiveTrainer(Trainer):
           q_eos_token_emb = get_last_token_embed(query["input_ids"], query_outputs.hidden_states[-1], 0)
           c_eos_token_emb= get_last_token_embed(candidate["input_ids"], candidate_outputs.hidden_states[-1], 0)
 
-          # Get the number of GPUs (world_size)
-          world_size = dist.get_world_size()
-          rank = dist.get_rank()
+          loss, _ = self.gathered_loss(q_eos_token_emb,c_eos_token_emb) if # \
+          else self.local_loss(q_eos_token_emb,c_eos_token_emb)
 
-          # Gather q_embed and c_embed from all GPUs
-          q_global = [torch.zeros_like(q_eos_token_emb) for _ in range(world_size)]
-          c_global = [torch.zeros_like(c_eos_token_emb) for _ in range(world_size)]
-
-          dist.all_gather(q_global, q_eos_token_emb)
-          dist.all_gather(c_global, c_eos_token_emb)
-          
-          q_global[rank] = q_eos_token_emb
-          c_global[rank] = c_eos_token_emb
-
-          # Concatenate the gathered embeddings along the batch dimension
-          q_global = torch.cat(q_global, dim=0)
-          c_global = torch.cat(c_global, dim=0)
-
-          loss_global, acc_global = compute_contrastive_loss(q_global, c_global)
-          loss_local, acc_local = compute_contrastive_loss(q_eos_token_emb.detach(), c_eos_token_emb.detach())
-
-          self.log_to_wandb("global_accuracy", acc_global.detach())
-          self.log_to_wandb("global_loss", acc_global.detach())
-          self.log_to_wandb("local_accuracy", acc_local)
-          self.log_to_wandb("local_loss", loss_local)
-
-          return loss_global
+          return loss
 
      def compute_loss(self, model, inputs, return_outputs=False):
-          if self.loss_type == "last_token":
+          if self.args.loss_type == "last_token":
                return self.last_token_loss(model, inputs, return_outputs=return_outputs)
           else:
                raise Exception("Loss type not implemented")
@@ -98,6 +74,49 @@ class ContrastiveTrainer(Trainer):
      def _get_train_sampler(self) -> Optional[torch.utils.data.Sampler]:
           return RandomSampler(self.train_dataset)
      
+     def gathered_loss(self, q_emb, c_emb):
+          """
+          Compute the loss by gathering across GPUs.
+          """
+           # Get the number of GPUs (world_size)
+          world_size = dist.get_world_size()
+          rank = dist.get_rank()
+
+          # Gather q_embed and c_embed from all GPUs
+          q_global = [torch.zeros_like(q_emb) for _ in range(world_size)]
+          c_global = [torch.zeros_like(c_emb) for _ in range(world_size)]
+
+          dist.all_gather(q_global, q_emb)
+          dist.all_gather(c_global, c_emb)
+          
+          q_global[rank] = q_emb
+          c_global[rank] = c_emb
+
+          # Concatenate the gathered embeddings along the batch dimension
+          q_global = torch.cat(q_global, dim=0)
+          c_global = torch.cat(c_global, dim=0)
+
+          loss_global, acc_global = compute_contrastive_loss(q_global, c_global)
+          loss_local, acc_local = compute_contrastive_loss(q_emb.detach(), c_emb.detach())
+
+          self.log_to_wandb("global_accuracy", acc_global.detach())
+          self.log_to_wandb("global_loss", loss_global.detach())
+          self.log_to_wandb("local_accuracy", acc_local)
+          self.log_to_wandb("local_loss", loss_local)
+          return loss_global, acc_global
+     
+     def local_loss(self, q_emb, c_emb):
+          """
+          Compute the loss locally on each GPU, average later.
+          """
+
+          local_loss, local_acc = compute_contrastive_loss(q_emb, c_emb)
+
+          self.log_to_wandb("global_accuracy", local_acc.detach())
+          self.log_to_wandb("global_loss", local_acc.detach())
+
+          return local_loss, local_acc
+
 def compute_contrastive_loss(q_embeds, p_embeds):  # [batch_size, embed_dim]
     # Normalized features
     q_embeds = F.normalize(q_embeds, dim=-1)

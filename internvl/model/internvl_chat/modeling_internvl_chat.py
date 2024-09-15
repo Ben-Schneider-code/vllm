@@ -127,7 +127,7 @@ class InternVLChatModel(PreTrainedModel):
             target_modules=target_modules,
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
-            task_type=TaskType.SEQ_2_SEQ_LM #TODO: figure out the difference between 'CAUSAL_LM' and 'SEQ_2_SEQ_LM' here
+            task_type='CAUSAL_LM' # Dictattes params are passed to the underlying HG model by the PEFT wrapper.
         )
         self.language_model = get_peft_model(self.language_model, lora_config)
         self.language_model.enable_input_require_grads()

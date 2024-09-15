@@ -47,7 +47,7 @@ from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils.logging import (enable_default_handler,
                                         enable_explicit_format, set_verbosity)
-
+from monkey_patch.qwen_attn_patch import unmask_qwen2_attn
 #from torch.profiler import profile, record_function, ProfilerActivity
 
 # Apply necessary patches for the transformers library
@@ -148,11 +148,27 @@ class VLMTrainingArguments(TrainingArguments):
         metadata={"help": "Loss type used in ContrastiveTrainer"}
     )
 
+    attn_mask: Optional[str] = field(
+        default="causal",
+        metadata={"help": "The mask to apply to the underlying langauge model"}
+    )
+
+    gather_loss: bool = field(
+    default=False,
+    metadata={
+        'help': (
+            'Whether the contrastive loss should be gathered before loss is computed'
+        )
+    },
+    )
+
+
 @dataclass
 class DataTrainingArguments:
     """
     Arguments for specifying data input for training and evaluation.
     """
+
     max_seq_length: Optional[int] = field(
         default=2048,
         metadata={
@@ -991,6 +1007,8 @@ def main():
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
+    if training_args.attn_mask == 'bidirectional':
+        unmask_qwen2_attn()
 
     logger = setup_logger(training_args)
 

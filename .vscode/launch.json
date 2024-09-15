@@ -10,11 +10,31 @@
             "console": "integratedTerminal",
             "args": [
                 "--include",
-                "localhost:4",
+                "localhost:0",
                 "--master_port",
                 "44000",
                 "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
                 "~/mllm/config/debug.json"
+            ],
+            "env": {
+                "PYTHONPATH": "/home/b3schnei/mllm",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
+            "name": "Debug LastToken",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "--include",
+                "localhost:0,1",
+                "--master_port",
+                "44000",
+                "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
+                "~/mllm/config/lora_last_token.json"
             ],
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",

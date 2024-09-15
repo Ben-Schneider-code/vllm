@@ -60,7 +60,7 @@ class ContrastiveTrainer(Trainer):
           q_eos_token_emb = get_last_token_embed(query["input_ids"], query_outputs.hidden_states[-1], 0)
           c_eos_token_emb= get_last_token_embed(candidate["input_ids"], candidate_outputs.hidden_states[-1], 0)
 
-          loss, _ = self.gathered_loss(q_eos_token_emb,c_eos_token_emb) if # \
+          loss, _ = self.gathered_loss(q_eos_token_emb,c_eos_token_emb) if self.args.gather_loss \
           else self.local_loss(q_eos_token_emb,c_eos_token_emb)
 
           return loss

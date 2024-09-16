@@ -54,8 +54,8 @@ class ContrastiveTrainer(Trainer):
           # ensure logits computation was skipped for memory / speed
           # saves memory, requires changing a line the transformers lib implementation of qwen
           # (or other LLM in used)
-          #assert(query_outputs.logits is None)
-          #assert(candidate_outputs.logits is None)
+          assert(query_outputs.logits is None)
+          assert(candidate_outputs.logits is None)
 
           q_eos_token_emb = get_last_token_embed(query["input_ids"], query_outputs.hidden_states[-1], 0)
           c_eos_token_emb= get_last_token_embed(candidate["input_ids"], candidate_outputs.hidden_states[-1], 0)

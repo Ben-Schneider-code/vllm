@@ -1,17 +1,28 @@
 ## Building a Decorder-only VLM Retriever
+
+### Hypothesis
+- Overfitting issue: it takes a large amount of out-of-batch example to ensure good loss in contrastive learning.
+- With low batch sizes the model finds cheap optimizations, overfits and quits.
+- Solution: Larger batch sizes / better out of batch retrieval candidates.  
+    - create high quality negatives using another model (CLIP, etc.)
+
 ### Experiments
 - Using CC dataset and LORA with params from NVidia paper run the following grid.  
 - **Note** Use LORA, params are given in the NV-embed paper. 
 - **Note** llm2vec uses a mask on the embedding over pad tokens (for pooling). But applies full attn (even over padded tokens) using flash attn.  
 - **Note** maybe change how the tokenization works. I.e. use a different system message, etc.
 - **Note** ablate across gathering before doing loss computation.
-
-| Mask        | Pooling    |
-|-------------|------------|
-| Full Attn   | EOS Token  |
-| Casual Attn | Mean Token |
-
+- **Note** Check correctness of bidrectional attn.
+- **Note** Find best combination of techniques @ 8B param scale.    
 - Try the NVidia version of an adapter (special version of attn where K=V + dense MLP)
+
+|               |Causal Mask|Full Mask|
+|---------------|-----------|---------|
+| **EOS TOKEN** |           |         |
+| **Mean Token**|           |         | 
+
+*LOCAL / GLOBAL LOSS SMOOTH 1 @ 5K steps*
+
 ### To Do  
 - **Build sanity checker for model**, i.e. making sure it cananswer basic questions with our tokenization + instruction.
 - **Add a basic dataset**

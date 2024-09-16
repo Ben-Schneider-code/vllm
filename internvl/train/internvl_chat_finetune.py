@@ -47,7 +47,7 @@ from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils.logging import (enable_default_handler,
                                         enable_explicit_format, set_verbosity)
-from monkey_patch.qwen_attn_patch import unmask_qwen2_attn
+from monkey_patch.qwen_attn_patch import unmask_qwen2_attn, qwen_memory_opt
 #from torch.profiler import profile, record_function, ProfilerActivity
 
 # Apply necessary patches for the transformers library
@@ -139,6 +139,11 @@ class ModelArguments:
         default='v2',
         metadata={'help': 'Specify the version of pixel shuffle implementation. Default is `v1`.'
                           'Please use `v2` to fix the bug of transposed image.'}
+    )
+
+    lora_dropout: float = field(
+        default=0.05,
+        metadata={'help': 'Dropout rate for LORA layers'}
     )
 
 @dataclass
@@ -1007,6 +1012,9 @@ def main():
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
+
+    qwen_memory_opt()
+    
     if training_args.attn_mask == 'bidirectional':
         unmask_qwen2_attn()
 
@@ -1056,11 +1064,11 @@ def main():
         model.language_model.lm_head.requires_grad = True
 
     if model_args.use_backbone_lora:
-        model.wrap_backbone_lora(r=model_args.use_backbone_lora, lora_alpha=2 * model_args.use_backbone_lora)
+        model.wrap_backbone_lora(r=model_args.use_backbone_lora, lora_alpha=2 * model_args.use_backbone_lora, lora_dropout=model_args.lora_dropout)
         model.config.use_backbone_lora = model_args.use_backbone_lora
 
     if model_args.use_llm_lora:
-        model.wrap_llm_lora(r=model_args.use_llm_lora, lora_alpha=2 * model_args.use_llm_lora)
+        model.wrap_llm_lora(r=model_args.use_llm_lora, lora_alpha=2 * model_args.use_llm_lora, lora_dropout=model_args.lora_dropout)
         model.config.use_llm_lora = model_args.use_llm_lora
 
     if model_args.freeze_mlp:

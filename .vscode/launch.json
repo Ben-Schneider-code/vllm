@@ -17,7 +17,8 @@
                 "~/mllm/config/debug.json"
             ],
             "env": {
-                "PYTHONPATH": "/home/b3schnei/mllm"
+                "PYTHONPATH": "/home/b3schnei/mllm",
+                "WANDB_MODE": "offline"
             }
         },
         {

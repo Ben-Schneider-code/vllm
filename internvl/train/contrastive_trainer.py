@@ -60,10 +60,11 @@ class ContrastiveTrainer(Trainer):
           q_eos_token_emb = get_last_token_embed(query["input_ids"], query_outputs.hidden_states[-1], 0)
           c_eos_token_emb= get_last_token_embed(candidate["input_ids"], candidate_outputs.hidden_states[-1], 0)
 
-          loss, _ = self.gathered_loss(q_eos_token_emb,c_eos_token_emb) if self.args.gather_loss \
-          else self.local_loss(q_eos_token_emb,c_eos_token_emb)
+          loss, acc = self.gathered_loss(q_eos_token_emb,c_eos_token_emb, return_outputs) if self.args.gather_loss \
+          else self.local_loss(q_eos_token_emb,c_eos_token_emb,return_outputs)
 
-          return loss
+          return (loss, {"loss": loss, "accuracy": acc}) if return_outputs else loss
+
 
      def compute_loss(self, model, inputs, return_outputs=False):
           if self.args.loss_type == "last_token":
@@ -74,7 +75,7 @@ class ContrastiveTrainer(Trainer):
      def _get_train_sampler(self) -> Optional[torch.utils.data.Sampler]:
           return RandomSampler(self.train_dataset)
      
-     def gathered_loss(self, q_emb, c_emb):
+     def gathered_loss(self, q_emb, c_emb, return_outputs):
           """
           Compute the loss by gathering across GPUs.
           """
@@ -107,7 +108,7 @@ class ContrastiveTrainer(Trainer):
           loss_local = dist.all_reduce(loss_local,op=dist.ReduceOp.SUM)/world_size
 
           # log only on main process
-          if dist.get_rank() == 0:
+          if not return_outputs and dist.get_rank() == 0:
                self.log_to_wandb("global_accuracy", acc_global.detach())
                self.log_to_wandb("global_loss", loss_global.detach())
                self.log_to_wandb("local_accuracy", acc_local)
@@ -115,7 +116,7 @@ class ContrastiveTrainer(Trainer):
 
           return loss_global, acc_global
      
-     def local_loss(self, q_emb, c_emb):
+     def local_loss(self, q_emb, c_emb, return_outputs):
           """
           Compute the loss locally on each GPU, average later.
           """
@@ -129,7 +130,7 @@ class ContrastiveTrainer(Trainer):
           average_loss = dist.all_reduce(local_loss.detach(),op=dist.ReduceOp.SUM)/world_size
           
           # log only on main process
-          if dist.get_rank() == 0:
+          if not return_outputs and dist.get_rank() == 0:
                self.log_to_wandb("local_accuracy", average_acc)
                self.log_to_wandb("local_loss", average_loss)
 

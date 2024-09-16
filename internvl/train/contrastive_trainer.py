@@ -102,11 +102,17 @@ class ContrastiveTrainer(Trainer):
 
           loss_global, acc_global = compute_contrastive_loss(q_global, c_global)
           loss_local, acc_local = compute_contrastive_loss(q_emb.detach(), c_emb.detach())
+          
+          acc_local =  dist.all_reduce(acc_local,op=dist.ReduceOp.SUM)/world_size
+          loss_local = dist.all_reduce(loss_local,op=dist.ReduceOp.SUM)/world_size
 
-          self.log_to_wandb("global_accuracy", acc_global.detach())
-          self.log_to_wandb("global_loss", loss_global.detach())
-          self.log_to_wandb("local_accuracy", acc_local)
-          self.log_to_wandb("local_loss", loss_local)
+          # log only on main process
+          if dist.get_rank() == 0:
+               self.log_to_wandb("global_accuracy", acc_global.detach())
+               self.log_to_wandb("global_loss", loss_global.detach())
+               self.log_to_wandb("local_accuracy", acc_local)
+               self.log_to_wandb("local_loss", loss_local)
+
           return loss_global, acc_global
      
      def local_loss(self, q_emb, c_emb):
@@ -117,9 +123,15 @@ class ContrastiveTrainer(Trainer):
           c_emb = c_emb.float()
 
           local_loss, local_acc = compute_contrastive_loss(q_emb, c_emb)
-
-          self.log_to_wandb("local_accuracy", local_acc.detach())
-          self.log_to_wandb("local_loss", local_loss.detach())
+          
+          world_size = dist.get_world_size()
+          average_acc =  dist.all_reduce(local_acc.detach(),op=dist.ReduceOp.SUM)/world_size
+          average_loss = dist.all_reduce(local_loss.detach(),op=dist.ReduceOp.SUM)/world_size
+          
+          # log only on main process
+          if dist.get_rank() == 0:
+               self.log_to_wandb("local_accuracy", average_acc)
+               self.log_to_wandb("local_loss", average_loss)
 
           return local_loss, local_acc
 

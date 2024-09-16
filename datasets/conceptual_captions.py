@@ -1,8 +1,9 @@
 import torch
 import os
 import orjson 
+from torch.utils.data import Dataset
 
-class ConceptualCaptionsAdapter(torch.utils.data.Dataset):
+class ConceptualCaptionsAdapter(Dataset):
     
     """
     **An adapter must return a data element in the following format**
@@ -53,7 +54,7 @@ class ConceptualCaptionsAdapter(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         metadata = self.meta[idx]
         image = metadata["image"]
-        # is it okay to not add any gpt msg?
+
         formatted_item = {
             "id": metadata["id"],
             "url": metadata["url"], 
@@ -62,7 +63,7 @@ class ConceptualCaptionsAdapter(torch.utils.data.Dataset):
                 "conversations": [
                     {
                         "from": "human",
-                        "value": "Intruction: What kind of image would this caption be used for? Caption: " + metadata["caption"] 
+                        "value": "Instruction: What kind of image would this caption be used for? Caption: " + metadata["caption"] 
 
                     },
                     {

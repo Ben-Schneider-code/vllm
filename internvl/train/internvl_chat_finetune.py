@@ -9,13 +9,14 @@ import traceback
 import warnings
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Dict, Optional
-
+from typing import Any, Dict, Optional, List
+from torch.utils.data import Subset
 import numpy as np
 import torch
 import torch.distributed as dist
 import transformers
 from datasets.conceptual_captions import ConceptualCaptionsAdapter
+from datasets.mscoco import MSCOCOAdapter
 from internvl.dist_utils import init_dist
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
 from internvl.model.internvl_chat import (InternVisionConfig,
@@ -243,7 +244,15 @@ class DataTrainingArguments:
             metadata={'help': 'The absolute path to the tsv file that contains your query instructions'},
         )
 
+    eval_datasets: Optional[Any] = field(
+            default_factory=lambda: [],
+            metadata={'help': 'List of datasets to eval against'},
+    )
 
+    eval_steps_per_dataset: Optional[int] = field(
+            default=1,
+            metadata={'help': 'Number of steps to use each time model is evaluated'},
+    )
             
 
 class LazySupervisedDataset(Dataset):
@@ -764,7 +773,7 @@ def build_contrastive_dataset(
     min_dynamic_patch=1,
     max_dynamic_patch=12,
     normalize_type='imagenet',
-    dataset_name = 'mbeir'
+    dataset_name = None
 ):  
     if dataset_name == 'mbeir':
         dataset =  ContrastiveDataset(
@@ -808,11 +817,36 @@ def build_contrastive_dataset(
                 normalize_type=normalize_type,
                 random_seed=0,
             )
+    elif dataset_name == 'mscoco':
+        dataset = ContrastiveDataset(
+                MSCOCOAdapter(),
+                data_args.conv_style,
+                None,
+                tokenizer,
+                tcs_loader,
+                ds_name="mscoco",
+                num_image_token=model.num_image_token,
+                image_size=data_args.force_image_size,
+                is_train=True,
+                pad2square=data_args.pad2square,
+                group_by_length=group_by_length,
+                dynamic_image_size=dynamic_image_size,
+                use_thumbnail=use_thumbnail,
+                min_dynamic_patch=min_dynamic_patch,
+                max_dynamic_patch=max_dynamic_patch,
+                repeat_time=1,
+                normalize_type=normalize_type,
+                random_seed=0,
+            )
+    else:
+        raise Exception("NotImplementedError")
+    
     return dataset
     
 
-def build_datasets(
-    data_args,
+def build_eval_datasets(
+    eval_batch_size: int,
+    data_args: DataTrainingArguments,
     tokenizer,
     tcs_loader,
     model,
@@ -823,47 +857,30 @@ def build_datasets(
     max_dynamic_patch=12,
     normalize_type='imagenet',
 ):
-    datasets = []
-    lengths = []
-    ds_collections = json.loads(open(data_args.meta_path).read())
-    for ds_idx, ds_name in enumerate(ds_collections.keys()):
-        repeat_time = ds_collections[ds_name]['repeat_time']
-        if 'max_dynamic_patch' in ds_collections[ds_name]:
-            max_num = ds_collections[ds_name]['max_dynamic_patch']
-            logger.info(f'max_dynamic_patch is set to {max_num} according to the meta file')
-        else:
-            max_num = max_dynamic_patch
-        dataset = LazySupervisedDataset(
-            data_args.conv_style, ds_collections[ds_name],
-            tokenizer,
-            tcs_loader,
-            ds_name=ds_name,
-            num_image_token=model.num_image_token,
-            image_size=data_args.force_image_size,
-            is_train=ds_collections[ds_name]['data_augment'],
-            pad2square=data_args.pad2square,
-            group_by_length=group_by_length,
-            dynamic_image_size=dynamic_image_size,
-            use_thumbnail=use_thumbnail,
-            min_dynamic_patch=min_dynamic_patch,
-            max_dynamic_patch=max_num,
-            repeat_time=repeat_time,
-            normalize_type=normalize_type,
-            random_seed=ds_idx,
+
+    if len(data_args.eval_datasets) == 0: return None
+    
+    subset_size = data_args.eval_steps_per_dataset*eval_batch_size
+    eval_ds = {}
+
+    for ds_name in data_args.eval_datasets:
+        ds = build_contrastive_dataset(
+        data_args,
+        tokenizer,
+        tcs_loader,
+        model,
+        group_by_length=group_by_length,
+        dynamic_image_size=dynamic_image_size,
+        use_thumbnail=use_thumbnail,
+        min_dynamic_patch=min_dynamic_patch,
+        max_dynamic_patch=max_dynamic_patch,
+        normalize_type=normalize_type,
+        dataset_name=ds_name
         )
-        logger.info(f'Add dataset: {ds_name} with length: {len(dataset)}')
-        datasets.append(dataset)
-        if data_args.use_data_resampling:
-            lengths.append(math.sqrt(len(dataset)))
-        else:
-            lengths.append(len(dataset))
-    if data_args.use_data_resampling:
-        total_length = sum(lengths)
-        weights = [l / total_length for l in lengths]
-        train_dataset = WeightedConcatDataset(datasets, weights)
-    else:
-        train_dataset = ConcatDataset(datasets)
-    return train_dataset
+        indices = torch.randperm(len(ds))[:subset_size]
+        eval_ds[ds_name] = Subset(ds, indices)
+
+    return eval_ds
 
 def load_model(model_args, data_args, training_args, logger):
      # Load pretrained model, tokenizer, and image processor
@@ -1046,6 +1063,20 @@ def main():
     tcs_loader,
     model,
     dataset_name="cc"
+    )  
+
+    eval_dataset = build_eval_datasets(
+    training_args.per_device_eval_batch_size,
+    data_args,
+    tokenizer,
+    tcs_loader,
+    model,
+    group_by_length=False,
+    dynamic_image_size=False,
+    use_thumbnail=False,
+    min_dynamic_patch=1,
+    max_dynamic_patch=12,
+    normalize_type='imagenet',
     )
 
     def _freeze_params(module):
@@ -1097,7 +1128,7 @@ def main():
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
-        eval_dataset=None,
+        eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         data_collator=contrastive_data_collator
     )

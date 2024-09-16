@@ -170,9 +170,9 @@ class ContrastiveTrainer(Trainer):
      
           metrics = {key: metrics[key] / len(outputs) for key in metrics}
           metrics["loss"] = torch.mean(torch.stack(losses, dim=0),dim=0)
+          metrics=cast_loss_dict(metrics, metric_key_prefix)
 
           return EvalLoopOutput(predictions=None, label_ids=None, metrics=metrics, num_samples=num_samples)
-
 
      def compute_loss(self, model, inputs, return_outputs=False):
           if self.args.loss_type == "last_token":
@@ -278,4 +278,7 @@ def get_last_token_embed(input_ids, hidden_state, padding_token_id):
     last_token_embeds = hidden_state[batch_range, last_token_pos]
 
     return last_token_embeds
+
+def cast_loss_dict(d: Dict, dataset_name: str):
+     return {dataset_name+"_"+x:y.cpu().item() for (x,y) in d.items()}
 

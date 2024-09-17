@@ -11,12 +11,34 @@
             "args": [
                 "--include",
                 "localhost:0",
+                "--master_port",
+                "44000",
                 "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
-                "~/mllm/config/pretrain_mlp.json"
+                "~/mllm/config/debug.json"
             ],
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",
-                "WANDB_MODE":"offline"
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
+            "name": "Debug LastToken",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "--include",
+                "localhost:0,1",
+                "--master_port",
+                "44000",
+                "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
+                "~/mllm/config/lora_last_token.json"
+            ],
+            "env": {
+                "PYTHONPATH": "/home/b3schnei/mllm",
+                "WANDB_MODE": "offline"
             }
         },
         {
@@ -34,40 +56,20 @@
             ],
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",
-                "WANDB_MODE":"offline"
+                "WANDB_MODE": "offline"
             }
         },
         {
-            "name": "Eval_with_Visualization",
+            "name": "debug_dataset",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
-            "justMyCode": false,
-            "console": "integratedTerminal",
-            "args": [
-                "--include",
-                "localhost:2",
-                "--master_port",
-                "55550",
-                "/home/b3schnei/mllm/internvl/evaluate/visualize_retrieval_error.py",
-                "~/mllm/config/eval_mode.json"
-            ],
-            "env": {
-                "PYTHONPATH": "/home/b3schnei/mllm",
-                "WANDB_MODE":"offline"
-            }
-        },
-        {
-            "name": "bundle viz",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "/home/b3schnei/mllm/internvl/evaluate/bundle_visualization_data.py",
+            "program": "/home/b3schnei/mllm/debug/debug_dataset.py",
             "console": "integratedTerminal",
             "args": [],
             "justMyCode": false,
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",
-                "WANDB_MODE":"offline"
+                "WANDB_MODE": "offline"
             }
         }
     ]

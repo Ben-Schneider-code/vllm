@@ -6,20 +6,18 @@
 import warnings
 from typing import Any, List, Optional, Tuple, Union
 
-import torch.distributed as dist
 import torch.utils.checkpoint
 import transformers
 from internvl.conversation import get_conv_template
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
 from internvl.model.phi3.modeling_phi3 import Phi3ForCausalLM
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, get_peft_model, TaskType
 from torch import nn
 from torch.nn import CrossEntropyLoss
-from transformers import (AutoModel, GenerationConfig, LlamaForCausalLM,
-                          LlamaTokenizer, Qwen2ForCausalLM)
+from transformers import GenerationConfig, LlamaForCausalLM, Qwen2ForCausalLM
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from transformers.modeling_utils import PreTrainedModel
-from transformers.utils import ModelOutput, logging
+from transformers.utils import logging
 
 from .configuration_internvl_chat import InternVLChatConfig
 from .modeling_intern_vit import InternVisionModel
@@ -33,24 +31,6 @@ def version_cmp(v1, v2, op='eq'):
     from packaging import version
     op_func = getattr(operator, op)
     return op_func(version.parse(v1), version.parse(v2))
-
-class MLP(nn.Module):
-    def __init__(self, hidden_size):
-        super().__init__()
-        self.lin1 = nn.Linear(hidden_size, hidden_size, bias=False)
-        self.lin2 = nn.Linear(hidden_size, hidden_size, bias=False)
-        
-        
-        self.lin1.weight.data = torch.eye(hidden_size)
-        self.lin2.weight.data = torch.eye(hidden_size)
-        self.activation = nn.GELU()
-    
-    def forward(self, x):
-        x = self.lin1(x)
-        y = self.activation(x)
-        z = self.lin2(y)
-        return z
-    
 
 class InternVLChatModel(PreTrainedModel):
     """
@@ -107,9 +87,6 @@ class InternVLChatModel(PreTrainedModel):
             nn.Linear(llm_hidden_size, llm_hidden_size)
         )
 
-        self.mlp_q = MLP(llm_hidden_size)
-        self.mlp_c = MLP(llm_hidden_size)
-
         self.img_context_token_id = None
         self.conv_template = get_conv_template(self.template)
         if hasattr(config, 'system_message'):
@@ -150,7 +127,7 @@ class InternVLChatModel(PreTrainedModel):
             target_modules=target_modules,
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
-            task_type='CAUSAL_LM'
+            task_type='CAUSAL_LM' # Dictattes params are passed to the underlying HG model by the PEFT wrapper.
         )
         self.language_model = get_peft_model(self.language_model, lora_config)
         self.language_model.enable_input_require_grads()

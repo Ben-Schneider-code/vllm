@@ -9,12 +9,14 @@ import traceback
 import warnings
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Dict, Optional
-
+from typing import Any, Dict, Optional, List
+from torch.utils.data import Subset
 import numpy as np
 import torch
 import torch.distributed as dist
 import transformers
+from datasets.conceptual_captions import ConceptualCaptionsAdapter
+from datasets.mscoco import MSCOCOAdapter
 from internvl.dist_utils import init_dist
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
 from internvl.model.internvl_chat import (InternVisionConfig,
@@ -28,9 +30,9 @@ from internvl.train.constants import (BOX_END_TOKEN, BOX_START_TOKEN,
                                       IMG_CONTEXT_TOKEN, IMG_END_TOKEN,
                                       IMG_START_TOKEN, QUAD_END_TOKEN,
                                       QUAD_START_TOKEN, REF_END_TOKEN,
-                                      REF_START_TOKEN, QUERY_TOKEN, CANDIDATE_TOKEN)
+                                      REF_START_TOKEN)
 from internvl.train.contrastive_trainer import ContrastiveTrainer
-from internvl.train.dataset import (ConcatDataset, TCSLoader,
+from internvl.train.dataset import (ConcatDataset,
                                     WeightedConcatDataset, build_transform,
                                     dynamic_preprocess, preprocess,
                                     preprocess_internlm, preprocess_mpt,
@@ -46,22 +48,13 @@ from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils.logging import (enable_default_handler,
                                         enable_explicit_format, set_verbosity)
-
-from torch.profiler import profile, record_function, ProfilerActivity
+from monkey_patch.qwen_attn_patch import unmask_qwen2_attn, qwen_memory_opt
+#from torch.profiler import profile, record_function, ProfilerActivity
 
 # Apply necessary patches for the transformers library
 # TODO: move these out of global
 replace_llama_rmsnorm_with_fused_rmsnorm()
 # replace_train_sampler()
-
-# Try to import petrel_client for image loading, fallback to PIL if unavailable
-try:
-    from petrel_client.client import Client
-    from petrel_client.common.config import Config
-    has_tcs_loader = True
-except ImportError as E:
-    print('petrel_client is not installed. Using PIL to load images.')
-    has_tcs_loader = False
 
 # Set constants for image processing and logging
 IGNORE_INDEX = -100
@@ -111,16 +104,6 @@ class ModelArguments:
         metadata={'help': 'Set to True to freeze the MLP layers of the model.'},
     )
 
-    freeze_mlp_2: bool = field(
-        default=False,
-        metadata={'help': 'Set to True to freeze the retriever MLP layers of the model.'},
-    )
-
-    train_llm_embedding: bool = field(
-        default=False,
-        metadata={'help': 'Set to True to freeze the retriever MLP layers of the model.'},
-    )
-
     unfreeze_vit_layers: int = field(
         default=0,
         metadata={'help': 'Specify the number of ViT layers to unfreeze. Default is 0.'},
@@ -159,12 +142,39 @@ class ModelArguments:
                           'Please use `v2` to fix the bug of transposed image.'}
     )
 
+    lora_dropout: float = field(
+        default=0.05,
+        metadata={'help': 'Dropout rate for LORA layers'}
+    )
+
+@dataclass
+class VLMTrainingArguments(TrainingArguments):
+    loss_type: Optional[str] = field(
+        default=None,
+        metadata={"help": "Loss type used in ContrastiveTrainer"}
+    )
+
+    attn_mask: Optional[str] = field(
+        default="causal",
+        metadata={"help": "The mask to apply to the underlying langauge model"}
+    )
+
+    gather_loss: bool = field(
+    default=False,
+    metadata={
+        'help': (
+            'Whether the contrastive loss should be gathered before loss is computed'
+        )
+    },
+    )
+
 
 @dataclass
 class DataTrainingArguments:
     """
     Arguments for specifying data input for training and evaluation.
     """
+
     max_seq_length: Optional[int] = field(
         default=2048,
         metadata={
@@ -234,7 +244,15 @@ class DataTrainingArguments:
             metadata={'help': 'The absolute path to the tsv file that contains your query instructions'},
         )
 
+    eval_datasets: Optional[Any] = field(
+            default_factory=lambda: [],
+            metadata={'help': 'List of datasets to eval against'},
+    )
 
+    eval_steps_per_dataset: Optional[int] = field(
+            default=1,
+            metadata={'help': 'Number of steps to use each time model is evaluated'},
+    )
             
 
 class LazySupervisedDataset(Dataset):
@@ -580,7 +598,107 @@ class LazySupervisedDataset(Dataset):
                 i = random.randint(0, len(self.raw_data) - 1)
         return ret
 
+
 class ContrastiveDataset(LazySupervisedDataset):
+    """
+    **An adapter must return a data element in the following format**
+    {
+            "query": {
+                optional<"image": str_path>,
+                "id": optional<any>,
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": str
+                    },
+                    {
+                        "from": "gpt",
+                        "value": str
+                    }
+                ]
+            },
+
+            "pos_cand": {
+                optional<"image": str_path>,
+                "id": optional<any>,
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": str
+                    },
+                    {
+                    "from": "gpt",
+                    "value": str
+                    }
+                ]
+            }
+    }
+    """
+
+
+    def __init__(
+        self,
+        adapter,
+        template_name,
+        meta,
+        tokenizer,
+        tcs_loader,
+        ds_name,
+        num_image_token,
+        image_size=224,
+        is_train=True,
+        pad2square=False,
+        group_by_length=False,
+        dynamic_image_size=False,
+        use_thumbnail=False,
+        min_dynamic_patch=1,
+        max_dynamic_patch=6,
+        min_num_frame=4,  # for video data
+        max_num_frame=12,  # for video data
+        sampling_method='rand',  # for video data
+        repeat_time=1,
+        normalize_type='imagenet',
+        random_seed=0,
+    ):
+        self.ds_name = ds_name
+        self.tokenizer = tokenizer
+        self.template_name = template_name
+        self.num_image_token = num_image_token
+        self.image_size = image_size
+        self.is_train = is_train
+        self.pad2square = pad2square
+        self.max_num_frame = max_num_frame
+        self.min_num_frame = min_num_frame
+        self.sampling_method = sampling_method
+        self.adapter = adapter
+        self.root = adapter.root
+        self.cached_data_dict = {}
+        self.tcs_loader = tcs_loader
+        self.group_by_length = group_by_length
+        self.dynamic_image_size = dynamic_image_size
+        self.use_thumbnail = use_thumbnail
+        self.min_dynamic_patch = min_dynamic_patch
+        self.max_dynamic_patch = max_dynamic_patch
+        self.normalize_type = normalize_type
+    
+    def __len__(self):
+        return len(self.adapter)
+
+    def tokenize_input(self, item):
+        if "image" in item:
+            return super().multi_modal_get_item(item)
+        else:
+            return super().pure_text_get_item(item)
+
+    def __getitem__(self, i) -> Dict[str, torch.Tensor]:
+        data_item = self.adapter[i]
+        query = data_item["query"]
+        cand = data_item["pos_cand"]
+        data_item["query_tokenized"] = self.tokenize_input(query)
+        data_item["cand_tokenized"] = self.tokenize_input(cand)
+        return data_item
+
+class MBEIRDataset(LazySupervisedDataset):
     
     def __init__(
         self,
@@ -655,32 +773,80 @@ def build_contrastive_dataset(
     min_dynamic_patch=1,
     max_dynamic_patch=12,
     normalize_type='imagenet',
+    dataset_name = None
 ):  
+    if dataset_name == 'mbeir':
+        dataset =  ContrastiveDataset(
+                MbeirAdapter(data_args=data_args),
+                data_args.conv_style,
+                None,
+                tokenizer,
+                tcs_loader,
+                ds_name="mbeir",
+                num_image_token=model.num_image_token,
+                image_size=data_args.force_image_size,
+                is_train=True,
+                pad2square=data_args.pad2square,
+                group_by_length=group_by_length,
+                dynamic_image_size=dynamic_image_size,
+                use_thumbnail=use_thumbnail,
+                min_dynamic_patch=min_dynamic_patch,
+                max_dynamic_patch=max_dynamic_patch,
+                repeat_time=1,
+                normalize_type=normalize_type,
+                random_seed=0,
+            )
+    elif dataset_name == 'cc':
+        dataset = ContrastiveDataset(
+                ConceptualCaptionsAdapter(),
+                data_args.conv_style,
+                None,
+                tokenizer,
+                tcs_loader,
+                ds_name="conceptual_captions",
+                num_image_token=model.num_image_token,
+                image_size=data_args.force_image_size,
+                is_train=True,
+                pad2square=data_args.pad2square,
+                group_by_length=group_by_length,
+                dynamic_image_size=dynamic_image_size,
+                use_thumbnail=use_thumbnail,
+                min_dynamic_patch=min_dynamic_patch,
+                max_dynamic_patch=max_dynamic_patch,
+                repeat_time=1,
+                normalize_type=normalize_type,
+                random_seed=0,
+            )
+    elif dataset_name == 'mscoco':
+        dataset = ContrastiveDataset(
+                MSCOCOAdapter(),
+                data_args.conv_style,
+                None,
+                tokenizer,
+                tcs_loader,
+                ds_name="mscoco",
+                num_image_token=model.num_image_token,
+                image_size=data_args.force_image_size,
+                is_train=True,
+                pad2square=data_args.pad2square,
+                group_by_length=group_by_length,
+                dynamic_image_size=dynamic_image_size,
+                use_thumbnail=use_thumbnail,
+                min_dynamic_patch=min_dynamic_patch,
+                max_dynamic_patch=max_dynamic_patch,
+                repeat_time=1,
+                normalize_type=normalize_type,
+                random_seed=0,
+            )
+    else:
+        raise Exception("NotImplementedError")
     
-    return ContrastiveDataset(
-            data_args,
-            data_args.conv_style,
-            data_args.mbeir_root,
-            tokenizer,
-            tcs_loader,
-            ds_name="mbeir",
-            num_image_token=model.num_image_token,
-            image_size=data_args.force_image_size,
-            is_train=True,
-            pad2square=data_args.pad2square,
-            group_by_length=group_by_length,
-            dynamic_image_size=dynamic_image_size,
-            use_thumbnail=use_thumbnail,
-            min_dynamic_patch=min_dynamic_patch,
-            max_dynamic_patch=max_dynamic_patch,
-            repeat_time=1,
-            normalize_type=normalize_type,
-            random_seed=0,
-        )
+    return dataset
     
 
-def build_datasets(
-    data_args,
+def build_eval_datasets(
+    eval_batch_size: int,
+    data_args: DataTrainingArguments,
     tokenizer,
     tcs_loader,
     model,
@@ -691,47 +857,30 @@ def build_datasets(
     max_dynamic_patch=12,
     normalize_type='imagenet',
 ):
-    datasets = []
-    lengths = []
-    ds_collections = json.loads(open(data_args.meta_path).read())
-    for ds_idx, ds_name in enumerate(ds_collections.keys()):
-        repeat_time = ds_collections[ds_name]['repeat_time']
-        if 'max_dynamic_patch' in ds_collections[ds_name]:
-            max_num = ds_collections[ds_name]['max_dynamic_patch']
-            logger.info(f'max_dynamic_patch is set to {max_num} according to the meta file')
-        else:
-            max_num = max_dynamic_patch
-        dataset = LazySupervisedDataset(
-            data_args.conv_style, ds_collections[ds_name],
-            tokenizer,
-            tcs_loader,
-            ds_name=ds_name,
-            num_image_token=model.num_image_token,
-            image_size=data_args.force_image_size,
-            is_train=ds_collections[ds_name]['data_augment'],
-            pad2square=data_args.pad2square,
-            group_by_length=group_by_length,
-            dynamic_image_size=dynamic_image_size,
-            use_thumbnail=use_thumbnail,
-            min_dynamic_patch=min_dynamic_patch,
-            max_dynamic_patch=max_num,
-            repeat_time=repeat_time,
-            normalize_type=normalize_type,
-            random_seed=ds_idx,
+
+    if len(data_args.eval_datasets) == 0: return None
+    
+    subset_size = data_args.eval_steps_per_dataset*eval_batch_size
+    eval_ds = {}
+
+    for ds_name in data_args.eval_datasets:
+        ds = build_contrastive_dataset(
+        data_args,
+        tokenizer,
+        tcs_loader,
+        model,
+        group_by_length=group_by_length,
+        dynamic_image_size=dynamic_image_size,
+        use_thumbnail=use_thumbnail,
+        min_dynamic_patch=min_dynamic_patch,
+        max_dynamic_patch=max_dynamic_patch,
+        normalize_type=normalize_type,
+        dataset_name=ds_name
         )
-        logger.info(f'Add dataset: {ds_name} with length: {len(dataset)}')
-        datasets.append(dataset)
-        if data_args.use_data_resampling:
-            lengths.append(math.sqrt(len(dataset)))
-        else:
-            lengths.append(len(dataset))
-    if data_args.use_data_resampling:
-        total_length = sum(lengths)
-        weights = [l / total_length for l in lengths]
-        train_dataset = WeightedConcatDataset(datasets, weights)
-    else:
-        train_dataset = ConcatDataset(datasets)
-    return train_dataset
+        indices = torch.randperm(len(ds))[:subset_size]
+        eval_ds[ds_name] = Subset(ds, indices)
+
+    return eval_ds
 
 def load_model(model_args, data_args, training_args, logger):
      # Load pretrained model, tokenizer, and image processor
@@ -743,12 +892,12 @@ def load_model(model_args, data_args, training_args, logger):
     tokenizer.model_max_length = data_args.max_seq_length
     token_list = [IMG_START_TOKEN, IMG_END_TOKEN, IMG_CONTEXT_TOKEN,
                   QUAD_START_TOKEN, QUAD_END_TOKEN, REF_START_TOKEN,
-                  REF_END_TOKEN, BOX_START_TOKEN, BOX_END_TOKEN, QUERY_TOKEN, CANDIDATE_TOKEN]
+                  REF_END_TOKEN, BOX_START_TOKEN, BOX_END_TOKEN]
     num_new_tokens = tokenizer.add_tokens(token_list, special_tokens=True)
     logger.info(f'Number of added tokens: {num_new_tokens}')
 
     img_context_token_id = tokenizer.convert_tokens_to_ids(IMG_CONTEXT_TOKEN)
-    tcs_loader = TCSLoader('~/petreloss.conf') if has_tcs_loader else None
+    tcs_loader = None
 
     if model_args.model_name_or_path is not None:
         logger.info('Loading InternVLChatModel...')
@@ -878,8 +1027,13 @@ def main():
     # launcher = "pytorch"
     # init_dist(launcher=launcher, backend='nccl')
     
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
+
+    qwen_memory_opt()
+    
+    if training_args.attn_mask == 'bidirectional':
+        unmask_qwen2_attn()
 
     logger = setup_logger(training_args)
 
@@ -907,16 +1061,27 @@ def main():
     data_args,
     tokenizer,
     tcs_loader,
-    model
+    model,
+    dataset_name="cc"
+    )  
+
+    eval_dataset = build_eval_datasets(
+    training_args.per_device_eval_batch_size,
+    data_args,
+    tokenizer,
+    tcs_loader,
+    model,
+    group_by_length=False,
+    dynamic_image_size=False,
+    use_thumbnail=False,
+    min_dynamic_patch=1,
+    max_dynamic_patch=12,
+    normalize_type='imagenet',
     )
 
     def _freeze_params(module):
         for param in module.parameters():
             param.requires_grad = False
-
-    def _unfreeze_params(module):
-        for param in module.parameters():
-            param.requires_grad = True
 
     if model_args.freeze_backbone:
         # model.vision_model = model.vision_model.eval()
@@ -930,37 +1095,15 @@ def main():
         model.language_model.lm_head.requires_grad = True
 
     if model_args.use_backbone_lora:
-        model.wrap_backbone_lora(r=model_args.use_backbone_lora, lora_alpha=2 * model_args.use_backbone_lora)
+        model.wrap_backbone_lora(r=model_args.use_backbone_lora, lora_alpha=2 * model_args.use_backbone_lora, lora_dropout=model_args.lora_dropout)
         model.config.use_backbone_lora = model_args.use_backbone_lora
 
     if model_args.use_llm_lora:
-        model.wrap_llm_lora(r=model_args.use_llm_lora, lora_alpha=2 * model_args.use_llm_lora)
+        model.wrap_llm_lora(r=model_args.use_llm_lora, lora_alpha=2 * model_args.use_llm_lora, lora_dropout=model_args.lora_dropout)
         model.config.use_llm_lora = model_args.use_llm_lora
 
     if model_args.freeze_mlp:
         _freeze_params(model.mlp1)
-
-    if model_args.freeze_mlp_2:
-        _freeze_params(model.mlp_q)
-        _freeze_params(model.mlp_c)
-
-    if model_args.train_llm_embedding:
-        embedding = model.language_model.get_input_embeddings()
-        _unfreeze_params(embedding)
-
-        mask = torch.zeros(model.language_model.get_input_embeddings().num_embeddings, requires_grad=False)
-        mask[tokenizer.convert_tokens_to_ids("<CLS_1>")] = 1
-        mask[tokenizer.convert_tokens_to_ids("<CLS_2>")] = 1
-        mask = mask.reshape((-1,1))
-
-        def create_grad_hook(grad_mask):
-            def grad_hook(grad):
-                gmask_gpu = grad_mask.to(device=grad.device, dtype=grad.dtype)
-                return torch.mul(gmask_gpu, grad)
-            return grad_hook
-
-        embedding.weight.register_hook(create_grad_hook(mask))
-
 
     if model_args.unfreeze_vit_layers != 0:
         layers = model.vision_model.encoder.layers[model_args.unfreeze_vit_layers:]
@@ -985,7 +1128,7 @@ def main():
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
-        eval_dataset=None,
+        eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         data_collator=contrastive_data_collator
     )
@@ -1010,13 +1153,54 @@ def main():
         trainer.save_metrics('train', metrics)
         trainer.save_state()
 
-def test():
+def greedy_decode():
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
     logger = setup_logger(training_args)
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
+    
+    from torch.utils.data import DataLoader
+    
+    dataset = build_contrastive_dataset(
+    data_args,
+    tokenizer,
+    tcs_loader,
+    model,
+    dataset_name="cc"
+    )
+
+    trainer = ContrastiveTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=dataset,
+        eval_dataset=None,
+        tokenizer=tokenizer,
+        data_collator=contrastive_data_collator
+    )
+
+    model = trainer.model.to("cuda")
+
+    dl = iter(DataLoader(dataset=dataset, batch_size=1, shuffle=False, collate_fn=contrastive_data_collator))
+    item = next(dl)
+    item = trainer._prepare_input(item)
+    item = item['pos_cand']
+    item.pop('labels')
+    im_end_token_id = tokenizer.convert_tokens_to_ids('<|im_end|>')
+    idx = -1
+    for _ in range(400):
+        with torch.autocast(device_type="cuda", dtype=torch.bfloat16), torch.no_grad():
+            out = model(**item)
+            next_token_logits = out['logits'][0,-1,:]
+            idx = torch.argmax(next_token_logits, dim=-1).reshape((1,1))
+            item["input_ids"] = torch.cat((item["input_ids"], idx), dim=-1)
+            if idx == im_end_token_id: break
+
+    out = tokenizer.batch_decode(item["input_ids"])
+    print("\n\n\n")
+    print(out)
+    print("\n\n\n")
 
 if __name__ == '__main__':
     main()
-    #test()
+    #greedy_decode()

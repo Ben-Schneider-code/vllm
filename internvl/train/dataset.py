@@ -2,7 +2,7 @@ import io
 
 import torch.utils
 from transformers.trainer_pt_utils import LabelSmoother
-
+import warnings
 IGNORE_TOKEN_ID = LabelSmoother.ignore_index
 import os
 import random
@@ -24,12 +24,6 @@ from torchvision.transforms.functional import InterpolationMode
 from .constants import (CLIP_MEAN, CLIP_STD, IMAGENET_MEAN, IMAGENET_STD,
                         IMG_CONTEXT_TOKEN, IMG_END_TOKEN, IMG_START_TOKEN,
                         SIGLIP_MEAN, SIGLIP_STD)
-
-try:
-    from petrel_client.client import Client
-    from petrel_client.common.config import Config
-except ImportError as E:
-    print('petrel_client is not installed. If you read data locally instead of from ceph, ignore it.')
 import sys
 
 
@@ -303,7 +297,7 @@ def preprocess(
     conversations = []
     for i, source in enumerate(sources):
         if roles[source[0]['from']] != conv.roles[0]:
-            # Skip the first one if it is not from human
+            # Skip the first one if it is not from`` human
             source = source[1:]
 
         conv.messages = []
@@ -472,11 +466,10 @@ def preprocess_mpt(
         if cur_len < tokenizer.model_max_length:
             if cur_len != total_len:
                 target[:] = IGNORE_TOKEN_ID
-                print(
+                warnings.warn(
                     f'WARNING: tokenization mismatch: {cur_len} vs. {total_len}.'
                     f' #turn = {len(turns) - 1}. (ignored). This dataset is {ds_name}.'
                 )
-                sys.stdout.flush()
 
     return dict(
         input_ids=input_ids,

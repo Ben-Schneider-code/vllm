@@ -306,7 +306,7 @@ def get_last_token_embed(input_ids, hidden_state, padding_token_id):
 def get_mean_token_embed(input_ids, hidden_state, padding_token_id):
      mask = (input_ids != padding_token_id).unsqueeze(-1)
      masked_states = mask*hidden_state
-     mean_token_emb = torch.mean(masked_states,dim=-1)
+     mean_token_emb = torch.mean(masked_states,dim=1)
      return mean_token_emb
 
 def cast_loss_dict(d: Dict, dataset_name: str):

@@ -14,7 +14,7 @@
                 "--master_port",
                 "44000",
                 "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
-                "~/mllm/config/debug.json"
+                "~/vllm/config/debug.json"
             ],
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",
@@ -34,7 +34,7 @@
                 "--master_port",
                 "44000",
                 "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
-                "~/mllm/config/lora_last_token.json"
+                "~/vllm/config/lora_last_token.json"
             ],
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",
@@ -52,7 +52,7 @@
                 "--include",
                 "localhost:0,2,3,4",
                 "/home/b3schnei/mllm/internvl/train/internvl_chat_finetune.py",
-                "~/mllm/config/pretrain_mlp.json"
+                "~/vllm/config/pretrain_mlp.json"
             ],
             "env": {
                 "PYTHONPATH": "/home/b3schnei/mllm",

@@ -1,4 +1,3 @@
-import torch
 import os
 import orjson 
 from torch.utils.data import Dataset
@@ -89,3 +88,11 @@ class ConceptualCaptionsAdapter(Dataset):
         }
 
         return formatted_item
+
+class CC128kAdapter(ConceptualCaptionsAdapter):
+
+    def __init__(self):      
+        assert "CC_ROOT" in os.environ, "Environment variable 'CC_ROOT' is not set"
+        self.root = os.environ["CC_ROOT"]
+        with open(os.path.join(self.root, "meta128k.json"), 'rb') as f:
+            self.meta = orjson.loads(f.read())

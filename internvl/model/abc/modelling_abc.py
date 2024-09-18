@@ -3,7 +3,7 @@ from internvl.model.internvl_chat.modeling_internvl_chat import InternVLChatMode
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from .abc_util import *
 
-class abc_mean_token(InternVLChatModel):
+class IVLMT(InternVLChatModel):
 
     def forward(self, inputs, return_outputs=False):
         query = inputs["query"]
@@ -22,22 +22,11 @@ class abc_mean_token(InternVLChatModel):
         q_eos_token_emb = get_mean_token_embed(query["input_ids"], query_outputs.hidden_states[-1], 0)
         c_eos_token_emb= get_mean_token_embed(candidate["input_ids"], candidate_outputs.hidden_states[-1], 0)
         
-        loss, acc = self.compute_loss(q_eos_token_emb,c_eos_token_emb)
+        loss, acc = compute_loss(q_eos_token_emb,c_eos_token_emb)
 
         return (loss, {"accuracy": acc}) if return_outputs else loss
 
-    def compute_loss(self, q_emb, c_emb):
-        """
-        Compute the loss locally on each GPU, average later.
-        """
-        q_emb = q_emb.float()
-        c_emb = c_emb.float()
-
-        local_loss, local_acc = compute_contrastive_loss(q_emb, c_emb)
-        
-        return local_loss, local_acc
-
-class abc_last_token(abc_mean_token):
+class IVLLT(IVLMT):
     
      def forward(self, model, inputs, return_outputs=False):
 
@@ -55,6 +44,6 @@ class abc_last_token(abc_mean_token):
           q_eos_token_emb = get_last_token_embed(query["input_ids"], query_outputs.hidden_states[-1], 0)
           c_eos_token_emb= get_last_token_embed(candidate["input_ids"], candidate_outputs.hidden_states[-1], 0)
 
-          loss, acc = self.compute_loss(q_eos_token_emb,c_eos_token_emb)
+          loss, acc = compute_loss(q_eos_token_emb,c_eos_token_emb)
 
           return (loss, {"accuracy": acc}) if return_outputs else loss

@@ -38,3 +38,14 @@ def get_last_token_embed(input_ids, hidden_state, padding_token_id):
     last_token_embeds = hidden_state[batch_range, last_token_pos]
 
     return last_token_embeds
+
+def compute_loss(q_emb, c_emb):
+    """
+    Compute the loss locally on each GPU, average later.
+    """
+    q_emb = q_emb.float()
+    c_emb = c_emb.float()
+
+    local_loss, local_acc = compute_contrastive_loss(q_emb, c_emb)
+    
+    return local_loss, local_acc

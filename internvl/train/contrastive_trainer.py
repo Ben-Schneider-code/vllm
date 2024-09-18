@@ -143,8 +143,25 @@ class ContrastiveTrainer(Trainer):
           return EvalLoopOutput(predictions=None, label_ids=None, metrics=metrics, num_samples=num_samples)
 
      def compute_loss(self, model, inputs, return_outputs=False):
-          return model(inputs, return_outputs=return_outputs)
-          
+
+          loss, outputs = model(inputs, return_outputs=True)
+          self.log_output(loss, outputs, return_outputs)
+
+          return (loss, outputs) if return_outputs else loss
+
+     def log_output(self, loss, outputs, return_outputs):
+          log_acc = outputs["accuracy"].detach().clone()
+          log_loss = loss.detach().clone()
+          dist.all_reduce(log_acc,op=dist.ReduceOp.SUM)
+          dist.all_reduce(log_loss,op=dist.ReduceOp.SUM)
+
+          # log only on main process
+          if not return_outputs and dist.get_rank() == 0:
+               world_size = dist.get_world_size()
+               self.log_to_wandb("local_accuracy", log_acc/world_size)
+               self.log_to_wandb("local_loss", log_loss/world_size)
+
+
      def _get_train_sampler(self) -> Optional[torch.utils.data.Sampler]:
           return RandomSampler(self.train_dataset)
      

@@ -926,8 +926,7 @@ def load_model(model_args, data_args, training_args, logger):
 
     if model_args.model_name_or_path is not None:
         logger.info('Loading InternVLChatModel...')
-        model_template = model_factory(model_args, data_args, training_args)
-        config = model_template.from_pretrained(model_args.model_name_or_path)
+        config = InternVLChatConfig.from_pretrained(model_args.model_name_or_path)
         config.vision_config.drop_path_rate = model_args.drop_path_rate
         if config.llm_config.model_type == 'internlm2':
             config.llm_config.attn_implementation = 'flash_attention_2'  # for InternLM
@@ -942,7 +941,8 @@ def load_model(model_args, data_args, training_args, logger):
         config.ps_version = model_args.ps_version
         config.min_dynamic_patch = data_args.min_dynamic_patch
         config.max_dynamic_patch = data_args.max_dynamic_patch
-        model = InternVLChatModel.from_pretrained(
+        model_template = model_factory(model_args, data_args, training_args)
+        model = model_template.from_pretrained(
             model_args.model_name_or_path, torch_dtype=torch.bfloat16, config=config)
     else:
         logger.info('Loading ViT-6B...')

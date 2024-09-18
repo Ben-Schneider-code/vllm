@@ -9,13 +9,13 @@ import traceback
 import warnings
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, Tuple
 from torch.utils.data import Subset
 import numpy as np
 import torch
 import torch.distributed as dist
 import transformers
-from datasets.conceptual_captions import ConceptualCaptionsAdapter
+from datasets.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter
 from datasets.mscoco import MSCOCOAdapter
 from internvl.dist_utils import init_dist
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
@@ -32,13 +32,13 @@ from internvl.train.constants import (BOX_END_TOKEN, BOX_START_TOKEN,
                                       QUAD_START_TOKEN, REF_END_TOKEN,
                                       REF_START_TOKEN)
 from internvl.train.contrastive_trainer import ContrastiveTrainer
-from internvl.train.dataset import (ConcatDataset,
-                                    WeightedConcatDataset, build_transform,
+from internvl.train.dataset import (build_transform,
                                     dynamic_preprocess, preprocess,
                                     preprocess_internlm, preprocess_mpt,
                                     preprocess_phi3)
 
 from internvl.train.mbeir_dataset import MbeirAdapter
+from internvl.train.model_factory import model_factory
 from internvl.train.trainer_monkey_patch import replace_create_optimizer
 from PIL import Image, ImageFile, PngImagePlugin, UnidentifiedImageError
 from torch.utils.data import Dataset
@@ -252,6 +252,10 @@ class DataTrainingArguments:
     eval_steps_per_dataset: Optional[int] = field(
             default=1,
             metadata={'help': 'Number of steps to use each time model is evaluated'},
+    )
+    training_dataset_name: Optional[str] = field(
+            default=None,
+            metadata={'help': 'Name of datasets to use in training'},
     )
             
 
@@ -817,6 +821,27 @@ def build_contrastive_dataset(
                 normalize_type=normalize_type,
                 random_seed=0,
             )
+    elif dataset_name == 'cc128k':
+        dataset = ContrastiveDataset(
+                CC128kAdapter(),
+                data_args.conv_style,
+                None,
+                tokenizer,
+                tcs_loader,
+                ds_name="conceptual_captions",
+                num_image_token=model.num_image_token,
+                image_size=data_args.force_image_size,
+                is_train=True,
+                pad2square=data_args.pad2square,
+                group_by_length=group_by_length,
+                dynamic_image_size=dynamic_image_size,
+                use_thumbnail=use_thumbnail,
+                min_dynamic_patch=min_dynamic_patch,
+                max_dynamic_patch=max_dynamic_patch,
+                repeat_time=1,
+                normalize_type=normalize_type,
+                random_seed=0,
+            )
     elif dataset_name == 'mscoco':
         dataset = ContrastiveDataset(
                 MSCOCOAdapter(),
@@ -901,7 +926,8 @@ def load_model(model_args, data_args, training_args, logger):
 
     if model_args.model_name_or_path is not None:
         logger.info('Loading InternVLChatModel...')
-        config = InternVLChatConfig.from_pretrained(model_args.model_name_or_path)
+        model_template = model_factory(model_args, data_args, training_args)
+        config = model_template.from_pretrained(model_args.model_name_or_path)
         config.vision_config.drop_path_rate = model_args.drop_path_rate
         if config.llm_config.model_type == 'internlm2':
             config.llm_config.attn_implementation = 'flash_attention_2'  # for InternLM
@@ -1029,7 +1055,7 @@ def main():
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
-
+    
     qwen_memory_opt()
     
     if training_args.attn_mask == 'bidirectional':
@@ -1062,7 +1088,7 @@ def main():
     tokenizer,
     tcs_loader,
     model,
-    dataset_name="cc"
+    dataset_name=data_args.training_dataset_name
     )  
 
     eval_dataset = build_eval_datasets(

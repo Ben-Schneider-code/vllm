@@ -20,10 +20,12 @@
     - Try mined hard negatives (using CLIP, following Nvidia retriever paper)
     - No warmup (?), lower lr (?), Cosine lr (?)
 ### To Do  
-- **Add another dataset like scienceQA for eval**
-- **Check how the instruction cahnges things**
+- **Check how the instructions/settings changes things**
     - No instruction vs. current vs. different version of current.
     - Mess with system message (?)  
+    - No warmup (?), lower lr (?), Cosine lr (?)
+    - Maybe decaying lr leads to overfitting
+- **Add another dataset like scienceQA for eval**
 - **Build a version of InternVL that follows NVidia's decoder-only appraoch.**
     - *Ablate* to show which techniques add value:
     - Remove casual attention [use all 1s for attention mask].

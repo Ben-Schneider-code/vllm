@@ -2,10 +2,9 @@ from typing import List, Optional, Tuple, Dict, Union, Any
 import torch
 from transformers import Trainer
 from transformers.trainer_pt_utils import find_batch_size
-from transformers.trainer_utils import has_length, EvalLoopOutput, EvalPrediction
+from transformers.trainer_utils import has_length, EvalLoopOutput
 from transformers.trainer import RandomSampler, logger
 import torch.nn.functional as F
-from transformers.modeling_outputs import CausalLMOutputWithPast
 import torch.distributed as dist
 from transformers.integrations import WandbCallback, deepspeed_init
 import os

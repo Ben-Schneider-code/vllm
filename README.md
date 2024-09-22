@@ -12,33 +12,36 @@
 - **Note** llm2vec uses a mask on the embedding over pad tokens (for pooling). But applies full attn (even over padded tokens) using flash attn.  
 - **Note** maybe change how the tokenization works. I.e. use a different system message, etc.
 - **Note** ablate across gathering before doing loss computation.
-- **Note** Check correctness of bidrectional attn.
+- **Note** Check correctness of bidirectional attn.
 - **Note** Find best combination of techniques @ 8B param scale.    
 - Try the NVidia version of an adapter (special version of attn where K=V + dense MLP)
-
-|               |Causal Mask|Full Mask|
-|---------------|-----------|---------|
-| **EOS TOKEN** |           |         |
-| **Mean Token**|           |         | 
-
-*LOCAL / GLOBAL LOSS SMOOTH 1 @ 5K steps*
-
+- **RESULTS** all techniques have very similar error, bidirectional *slightly* better than causal. Basically no difference between mean and last token. Unintuitively, averaging negatives across GPUs doesn't help (?). Implementation error?  
+- **PROBLEM** incredible overfitting. As little as 100 steps can essentially halt progress.  
+    - Try mined hard negatives (using CLIP, following Nvidia retriever paper)
+    - No warmup (?), lower lr (?), Cosine lr (?)
 ### To Do  
-- **Build sanity checker for model**, i.e. making sure it cananswer basic questions with our tokenization + instruction.
-- **Add a basic dataset**
-    - Conceptual captions is already downloaded.
-    - Across the board, it doesn't seem like large data is required, Nvidia paper and LLM2VEC only require a few thousand steps (batch_size=128).  
+- **Add another dataset like scienceQA for eval**
+- **Check how the instruction cahnges things**
+    - No instruction vs. current vs. different version of current.
+    - Mess with system message (?)  
 - **Build a version of InternVL that follows NVidia's decoder-only appraoch.**
     - *Ablate* to show which techniques add value:
     - Remove casual attention [use all 1s for attention mask].
     - Using last token embed, average token embed, Attention into dense on hidden states.
     - Use LORA on the base model.
-        - Nvida paper provides settings.
+        - Nvidia paper provides settings.
     - Instruction tuning **(?)** - The NVidia paper uses it on queries.
     - Compare vs. CLIP on MSCOCO.
-- **Long-run potentiall improvements**
+- **Long-run potential improvements**
     - Better data, NVidia paper provides hard-negatives dereived from an encoder model. We could use **CLIP** in a similar way?
         - [NV-Retriever](https://arxiv.org/pdf/2407.15831) provides insight on hard negative mining.
+
+### Done
+- **Build sanity checker for model** - Done
+    - i.e. making sure it cananswer basic questions with our tokenization + instruction.
+- **Add a basic dataset** - Done
+    - Conceptual captions is already downloaded. 
+    - Across the board, it doesn't seem like large data is required, Nvidia paper and LLM2VEC only require a few thousand steps (batch_size=128).
 
 ## Questions:
 - What is the ideal way to pass instructions to InternVL, can we make it similar to NV-embed?

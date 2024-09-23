@@ -37,6 +37,7 @@ class IVLMT(InternVLChatModel):
                 "q": q_emb.detach(),
                 "c": c_emb.detach()
             }
+
         return (loss, outputs) if return_outputs else loss
 
 class IVLLT(InternVLChatModel):
@@ -49,7 +50,7 @@ class IVLLT(InternVLChatModel):
         query.pop("labels")
         candidate.pop("labels")
         query_outputs : CausalLMOutputWithPast = super().forward(**query, output_hidden_states=True)
-        candidate_outputs : CausalLMOutputWithPast = super().forward()(**candidate, output_hidden_states=True)
+        candidate_outputs : CausalLMOutputWithPast = super().forward(**candidate, output_hidden_states=True)
         
         assert(query_outputs.logits is None)
         assert(candidate_outputs.logits is None)
@@ -67,9 +68,7 @@ class IVLLT(InternVLChatModel):
         if return_outputs:
             outputs["accuracy"] = acc
         if return_prediction:
-            outputs["prediction"] = {
-                "q": q_emb.detach(),
-                "c": c_emb.detach()
-            }
+            outputs["prediction"] =  q_emb.detach()
+            outputs["c_embeds"] = c_emb.detach()
 
         return (loss, outputs) if return_outputs else loss

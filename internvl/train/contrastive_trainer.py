@@ -63,8 +63,8 @@ class ContrastiveTrainer(Trainer):
           inputs = self._prepare_inputs(inputs)
 
           with torch.no_grad():
-               with self.compute_loss_context_manager():
-                    loss, outputs = model(inputs, return_prediction=True)
+               #with self.compute_loss_context_manager():
+               loss, outputs = model(inputs, return_prediction=True)
           return loss, outputs
 
      def evaluation_loop(

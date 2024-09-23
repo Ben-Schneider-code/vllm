@@ -5,7 +5,7 @@
             "name": "Debug DeepSpeed",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
+            "program": "${env:DEEPSPEED}",
             "justMyCode": false,
             "console": "integratedTerminal",
             "args": [
@@ -13,11 +13,11 @@
                 "localhost:0",
                 "--master_port",
                 "44000",
-                "/home/b3schnei/vllm/internvl/train/internvl_chat_finetune.py",
-                "~/vllm/config/debug.json"
+                "${env:VLLM_REPO}/internvl/train/internvl_chat_finetune.py",
+                "${env:VLLM_REPO}/config/debug.json"
             ],
             "env": {
-                "PYTHONPATH": "/home/b3schnei/vllm",
+                "PYTHONPATH": "${env:VLLM_REPO}",
                 "WANDB_MODE": "offline"
             }
         },
@@ -25,7 +25,7 @@
             "name": "Debug Visualization",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
+            "program": "${env:DEEPSPEED}",
             "justMyCode": false,
             "console": "integratedTerminal",
             "args": [
@@ -33,11 +33,11 @@
                 "localhost:3",
                 "--master_port",
                 "44000",
-                "/home/b3schnei/vllm/visualization/embed.py",
-                "~/vllm/config/visualize/test_viz.json"
+                "${env:VLLM_REPO}/visualization/embed.py",
+                "${env:VLLM_REPO}/config/visualize/test_viz.json"
             ],
             "env": {
-                "PYTHONPATH": "/home/b3schnei/vllm",
+                "PYTHONPATH": "${env:VLLM_REPO}",
                 "WANDB_MODE": "offline"
             }
         },
@@ -45,7 +45,7 @@
             "name": "Debug LastToken",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
+            "program": "${env:DEEPSPEED}",
             "justMyCode": false,
             "console": "integratedTerminal",
             "args": [
@@ -53,11 +53,11 @@
                 "localhost:0,1",
                 "--master_port",
                 "44000",
-                "/home/b3schnei/vllm/internvl/train/internvl_chat_finetune.py",
-                "~/vllm/config/lora_last_token.json"
+                "${env:VLLM_REPO}/internvl/train/internvl_chat_finetune.py",
+                "${env:VLLM_REPO}/config/lora_last_token.json"
             ],
             "env": {
-                "PYTHONPATH": "/home/b3schnei/vllm",
+                "PYTHONPATH": "${env:VLLM_REPO}",
                 "WANDB_MODE": "offline"
             }
         },
@@ -65,17 +65,17 @@
             "name": "Debug DeepSpeed - 4 GPU",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
+            "program": "${env:DEEPSPEED}",
             "justMyCode": false,
             "console": "integratedTerminal",
             "args": [
                 "--include",
                 "localhost:0,2,3,4",
-                "/home/b3schnei/vllm/internvl/train/internvl_chat_finetune.py",
-                "~/vllm/config/pretrain_mlp.json"
+                "${env:VLLM_REPO}/internvl/train/internvl_chat_finetune.py",
+                "${env:VLLM_REPO}/config/pretrain_mlp.json"
             ],
             "env": {
-                "PYTHONPATH": "/home/b3schnei/vllm",
+                "PYTHONPATH": "${env:VLLM_REPO}",
                 "WANDB_MODE": "offline"
             }
         }

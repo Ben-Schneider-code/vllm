@@ -22,6 +22,26 @@
             }
         },
         {
+            "name": "Debug Visualization",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/b3schnei/anaconda3/envs/internvl/bin/deepspeed",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "--include",
+                "localhost:3",
+                "--master_port",
+                "44000",
+                "/home/b3schnei/vllm/visualization/embed.py",
+                "~/vllm/config/visualize/test_viz.json"
+            ],
+            "env": {
+                "PYTHONPATH": "/home/b3schnei/vllm",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug LastToken",
             "type": "debugpy",
             "request": "launch",

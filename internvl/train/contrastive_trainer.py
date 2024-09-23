@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import torch.distributed as dist
 from transformers.integrations import WandbCallback, deepspeed_init
 import os
+import time
 
 class WandbLogger(WandbCallback):
 
@@ -50,6 +51,21 @@ class ContrastiveTrainer(Trainer):
                loss = loss.mean().detach()
 
           return loss, outputs
+     
+     def embed_step(
+          self,
+          model: torch.nn.Module,
+          inputs: Dict[str, Union[torch.Tensor, Any]],
+          prediction_loss_only: bool,
+          ignore_keys: Optional[List[str]] = None,
+     ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]]:
+
+          inputs = self._prepare_inputs(inputs)
+
+          with torch.no_grad():
+               with self.compute_loss_context_manager():
+                    loss, outputs = model(inputs, return_prediction=True)
+          return loss, outputs
 
      def evaluation_loop(
           self,
@@ -75,7 +91,24 @@ class ContrastiveTrainer(Trainer):
           model = self._wrap_model(self.model, training=False, dataloader=dataloader)
 
           if len(self.accelerator._models) == 0 and model is self.model:
-               raise Exception("NotImplementedError")
+            start_time = time.time()
+            model = (
+                self.accelerator.prepare(model)
+                if self.is_deepspeed_enabled
+                else self.accelerator.prepare_model(model, evaluation_mode=True)
+            )
+            self.model_preparation_time = round(time.time() - start_time, 4)
+
+            if self.is_fsdp_enabled:
+                self.model = model
+
+            # for the rest of this function `model` is the outside model, whether it was wrapped or not
+            if model is not self.model:
+                self.model_wrapped = model
+
+            # backward compatibility
+            if self.is_deepspeed_enabled:
+                self.deepspeed = self.model_wrapped
 
           # if full fp16 or bf16 eval is wanted and this ``evaluation`` or ``predict`` isn't called
           # while ``train`` is running, cast it to the right dtype first and then put on device
@@ -105,6 +138,7 @@ class ContrastiveTrainer(Trainer):
           observed_num_examples = 0
           outputs = []
           losses = []
+          predictions = []
 
           # Main evaluation loop
           for _, inputs in enumerate(dataloader):
@@ -118,7 +152,8 @@ class ContrastiveTrainer(Trainer):
 
                # Prediction step
                loss, output = self.prediction_step(model, inputs, prediction_loss_only, ignore_keys=ignore_keys)
-               
+               if "prediction" in output.keys():
+                    predictions.append(output.pop("prediction"))
                outputs.append(output)
                losses.append(loss)
                
@@ -139,7 +174,7 @@ class ContrastiveTrainer(Trainer):
           metrics["loss"] = torch.mean(torch.stack(losses, dim=0),dim=0)
           metrics=cast_loss_dict(metrics, metric_key_prefix)
 
-          return EvalLoopOutput(predictions=None, label_ids=None, metrics=metrics, num_samples=num_samples)
+          return EvalLoopOutput(predictions=predictions, label_ids=None, metrics=metrics, num_samples=num_samples)
 
      def compute_loss(self, model, inputs, return_outputs=False):
 

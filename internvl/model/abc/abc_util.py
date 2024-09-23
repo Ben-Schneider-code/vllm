@@ -1,4 +1,3 @@
-from typing import Dict
 import torch
 import torch.nn.functional as F
 
@@ -9,9 +8,7 @@ def get_mean_token_embed(input_ids, hidden_state, padding_token_id):
      return mean_token_emb
 
 def compute_contrastive_loss(q_embeds, p_embeds):  # [batch_size, embed_dim]
-    # Normalized features
-    q_embeds = F.normalize(q_embeds, dim=-1)
-    p_embeds = F.normalize(p_embeds, dim=-1)
+
     bs = q_embeds.size(0)
 
     score = torch.matmul(q_embeds, p_embeds.t())  # * self.logit_scale  # [bs, bs]
@@ -38,14 +35,3 @@ def get_last_token_embed(input_ids, hidden_state, padding_token_id):
     last_token_embeds = hidden_state[batch_range, last_token_pos]
 
     return last_token_embeds
-
-def compute_loss(q_emb, c_emb):
-    """
-    Compute the loss locally on each GPU, average later.
-    """
-    q_emb = q_emb.float()
-    c_emb = c_emb.float()
-
-    local_loss, local_acc = compute_contrastive_loss(q_emb, c_emb)
-    
-    return local_loss, local_acc

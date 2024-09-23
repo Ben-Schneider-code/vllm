@@ -20,6 +20,8 @@
     - Try mined hard negatives (using CLIP, following Nvidia retriever paper)
     - No warmup (?), lower lr (?), Cosine lr (?)
 ### To Do  
+- **Visualize**
+    - Visualize batches of mscoco.
 - **Check how the instructions/settings changes things**
     - No instruction vs. current vs. different version of current.
     - Mess with system message (?)  

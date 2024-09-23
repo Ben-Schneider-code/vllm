@@ -135,7 +135,7 @@ class InternVLChatModel(PreTrainedModel):
 
     def forward(
             self,
-            pixel_values: torch.FloatTensor,
+            pixel_values: torch.FloatTensor = None,
             input_ids: torch.LongTensor = None,
             attention_mask: Optional[torch.Tensor] = None,
             position_ids: Optional[torch.LongTensor] = None,

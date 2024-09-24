@@ -1,7 +1,7 @@
 {
   "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-1B",
   "conv_style": "Hermes-2",
-  "output_dir": "/home/b3schnei/output/lora_last_token_bidirectional_gather",
+  "output_dir": "/home/b3schnei/output/embed",
   "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
   "overwrite_output_dir": true,
   "force_image_size": 448,
@@ -11,8 +11,6 @@
   "freeze_llm": true,
   "freeze_mlp": true,
   "freeze_backbone": true,
-  "use_backbone_lora": 16,
-  "use_llm_lora": 16,
   "vision_select_layer": -1,
   "dataloader_num_workers": 4,
   "bf16": true,
@@ -36,7 +34,6 @@
   "use_thumbnail": true,
   "ps_version": "v2",
   "deepspeed": "./deepspeed/zero_stage3_config.json",
-  "report_to": "wandb",
   "attn_mask": "bidirectional",
   "loss_type": "last_token",
   "gather_loss": true,
@@ -45,6 +42,6 @@
   ],
   "eval_steps_per_dataset": 20,
   "evaluation_strategy": "steps",
-  "per_device_eval_batch_size": 128,
+  "per_device_eval_batch_size": 16,
   "eval_steps": 200
 }

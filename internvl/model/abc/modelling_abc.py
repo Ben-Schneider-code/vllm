@@ -38,7 +38,7 @@ class IVLMT(InternVLChatModel):
                 "c": c_emb.detach()
             }
 
-        return (loss, outputs) if return_outputs else loss
+        return (loss, outputs) if return_outputs or return_prediction else loss
 
 class IVLLT(InternVLChatModel):
     
@@ -69,8 +69,9 @@ class IVLLT(InternVLChatModel):
             outputs["accuracy"] = acc
         if return_prediction:
             outputs["prediction"] = {
+                "meta": inputs["meta"],
                 "q": q_emb.detach(),
                 "c": c_emb.detach()
             }
 
-        return (loss, outputs) if return_outputs else loss
+        return (loss, outputs) if return_outputs or return_prediction else loss

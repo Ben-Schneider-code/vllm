@@ -1,3 +1,4 @@
+import torch
 from transformers import HfArgumentParser
 from transformers.trainer_utils import PredictionOutput
 from internvl.patch.pad_data_collator import contrastive_data_collator
@@ -47,7 +48,21 @@ def embed_ds():
 
     trainer.prediction_step = trainer.embed_step
     output: PredictionOutput  = trainer.predict(dataset)
-    print(output)
 
+    preds = output.predictions
+    
+    meta = []
+    q = []
+    c = []
+
+    for i in range(len(preds)):
+        meta.extend(preds[i]["meta"])
+        q.extend(preds[i]["q"])
+        c.extend(preds[i]["c"])
+
+    q = torch.stack(q, dim=0)
+    c = torch.stack(c, dim=0)
+    
+    save(meta,q,c,ou)
 if __name__ == "__main__":
     embed_ds()

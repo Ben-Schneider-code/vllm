@@ -36,7 +36,7 @@ class MSCOCO(Dataset):
             "text_id": text_item["id"],
             "image_id": image_item["id"],
             "url" : image_item["coco_url"],
-            "id": ind
+            "id": ind.item()
         }
     
 class MSCOCOAdapter(Dataset):
@@ -57,7 +57,7 @@ class MSCOCOAdapter(Dataset):
             "id": metadata["id"],
             "url": metadata["url"], 
             "query": {
-                "id": metadata["id"],
+                "id": metadata["text_id"],
                 "conversations": [
                     {
                         "from": "human",
@@ -71,7 +71,7 @@ class MSCOCOAdapter(Dataset):
                 ]
             },
             "pos_cand": {
-                "id": metadata["id"],
+                "id": metadata["image_id"],
                 "image": metadata["image"],
                 "conversations": [
                     {

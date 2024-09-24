@@ -44,7 +44,7 @@ def internvl_embed_dataset():
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
 
     dataset_name = data_args.eval_datasets[0]   
-    
+
     dataset = build_contrastive_dataset(
     data_args,
     tokenizer,
@@ -58,6 +58,9 @@ def internvl_embed_dataset():
     normalize_type='imagenet',
     dataset_name = dataset_name
     )
+
+    from torch.utils.data import Subset
+    dataset = Subset(dataset=dataset,indices=range(2000))
     
     trainer = ContrastiveTrainer(
         model=model,

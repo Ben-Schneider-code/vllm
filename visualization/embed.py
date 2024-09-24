@@ -7,8 +7,30 @@ from internvl.train.internvl_chat_finetune import VLMTrainingArguments, DataTrai
 import os
 import sys
 from monkey_patch.qwen_attn_patch import qwen_memory_opt, unmask_qwen2_attn
+import json 
 
-def embed_ds():
+def save(dataset_info: dict,
+        metadata: dict,
+        query: torch.tensor,
+        cand: torch.tensor,
+        output_dir: str):
+    # Create the output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Save the dictionaries as JSON files
+    with open(os.path.join(output_dir, "dataset_info.json"), "w") as f:
+        json.dump(dataset_info, f)
+
+    with open(os.path.join(output_dir, "metadata.json"), "w") as f:
+        json.dump(metadata, f)
+
+    # Save the tensors as binary files
+    torch.save(query, os.path.join(output_dir, "query.pt"))
+    torch.save(cand, os.path.join(output_dir, "cand.pt"))
+
+    print(f"Data saved to '{output_dir}'.")
+
+def internvl_embed_dataset():
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
@@ -20,10 +42,10 @@ def embed_ds():
         
     logger = setup_logger(training_args)
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
+
+    dataset_name = data_args.eval_datasets[0]   
     
-    # switch to other ds builder when embedding full datasets
-    dataset = build_eval_datasets(
-    4,
+    dataset = build_contrastive_dataset(
     data_args,
     tokenizer,
     tcs_loader,
@@ -34,8 +56,8 @@ def embed_ds():
     min_dynamic_patch=1,
     max_dynamic_patch=12,
     normalize_type='imagenet',
+    dataset_name = dataset_name
     )
-    dataset = dataset[list(dataset.keys())[0]]
     
     trainer = ContrastiveTrainer(
         model=model,
@@ -63,6 +85,12 @@ def embed_ds():
     q = torch.stack(q, dim=0)
     c = torch.stack(c, dim=0)
     
-    save(meta,q,c,ou)
+    dataset_info = {
+        "model_name": model_args.model_name_or_path,
+        "dataset_name": dataset_name
+    }
+
+    save(dataset_info, meta, q,c,training_args.output_dir)
+
 if __name__ == "__main__":
-    embed_ds()
+    internvl_embed_dataset()

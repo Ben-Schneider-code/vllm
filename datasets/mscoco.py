@@ -36,7 +36,7 @@ class MSCOCO(Dataset):
             "text_id": text_item["id"],
             "image_id": image_item["id"],
             "url" : image_item["coco_url"],
-            "id": ind.item()
+            "id": str(ind)
         }
     
 class MSCOCOAdapter(Dataset):

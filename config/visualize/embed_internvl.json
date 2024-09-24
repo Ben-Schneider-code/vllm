@@ -1,7 +1,7 @@
 {
   "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-1B",
   "conv_style": "Hermes-2",
-  "output_dir": "/home/b3schnei/output/embed",
+  "output_dir": "/home/b3schnei/output/embed/embed_internvl",
   "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
   "overwrite_output_dir": true,
   "force_image_size": 448,
@@ -42,6 +42,6 @@
   ],
   "eval_steps_per_dataset": 20,
   "evaluation_strategy": "steps",
-  "per_device_eval_batch_size": 16,
+  "per_device_eval_batch_size": 64,
   "eval_steps": 200
 }

@@ -4,7 +4,6 @@ from transformers import Trainer
 from transformers.trainer_pt_utils import find_batch_size
 from transformers.trainer_utils import has_length, EvalLoopOutput
 from transformers.trainer import RandomSampler, logger
-import torch.nn.functional as F
 import torch.distributed as dist
 from transformers.integrations import WandbCallback, deepspeed_init
 import os

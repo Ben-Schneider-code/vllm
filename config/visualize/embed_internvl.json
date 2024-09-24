@@ -42,6 +42,6 @@
   ],
   "eval_steps_per_dataset": 20,
   "evaluation_strategy": "steps",
-  "per_device_eval_batch_size": 64,
+  "per_device_eval_batch_size": 256,
   "eval_steps": 200
 }

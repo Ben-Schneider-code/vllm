@@ -35,10 +35,6 @@
     "ps_version": "v2",
     "deepspeed": "./deepspeed/zero_off.json",
     "report_to": "wandb",
-    "mbeir_root": "/home/b3schnei/M-BEIR",
-    "mbeir_train_root": "/home/b3schnei/M-BEIR/query/union_train/mbeir_union_up_train.jsonl",
-    "mbeir_cand_root": "/home/b3schnei/M-BEIR/cand_pool/global/mbeir_union_train_cand_pool.jsonl",
-    "mbeir_instruction_root": "/home/b3schnei/M-BEIR/instructions/query_instructions.tsv",
     "loss_type": "mean_token",
     "eval_datasets": [
         "cc",

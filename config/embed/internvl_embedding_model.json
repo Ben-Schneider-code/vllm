@@ -1,5 +1,5 @@
 {
-  "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-1B",
+  "model_name_or_path": "/home/b3schnei/output/inernvl_embedding_model/checkpoint-200",
   "conv_style": "Hermes-2",
   "output_dir": "/home/b3schnei/output/inernvl_embedding_model",
   "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
@@ -35,18 +35,16 @@
   "remove_unused_columns": false,
   "use_thumbnail": true,
   "ps_version": "v2",
-  "deepspeed": "./deepspeed/zero_lora.json",
-  "report_to": "wandb",
+  "deepspeed": "./deepspeed/zero_stage3_config.json",
   "attn_mask": "bidirectional",
   "loss_type": "mean_token",
   "gather_loss": false,
   "eval_datasets": [
-    "cc",
-    "mscoco"
+    "cc"
   ],
   "eval_steps_per_dataset": 20,
   "evaluation_strategy": "steps",
   "per_device_eval_batch_size": 128,
   "eval_steps": 50,
-  "training_dataset_name": "cc128k"
+  "training_dataset_name": "cc"
 }

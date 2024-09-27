@@ -59,9 +59,6 @@ def internvl_embed_dataset():
     dataset_name = dataset_name
     )
 
-    from torch.utils.data import Subset
-    dataset = Subset(dataset=dataset,indices=range(2000))
-    
     trainer = ContrastiveTrainer(
         model=model,
         args=training_args,
@@ -92,8 +89,9 @@ def internvl_embed_dataset():
         "model_name": model_args.model_name_or_path,
         "dataset_name": dataset_name
     }
-
-    save(dataset_info, meta, q,c,training_args.output_dir)
+    
+    save(dataset_info, meta,q,c,training_args.output_dir)
+    print(output.metrics)
 
 if __name__ == "__main__":
     internvl_embed_dataset()

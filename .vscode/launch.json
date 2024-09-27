@@ -42,6 +42,40 @@
             }
         },
         {
+            "name": "Debug Neg Mining",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/visualization/neg_mine.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "${env:HOME}/output/embed/embed_internvl_1000",
+                "5"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "7",
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
+            "name": "Debug Visualization",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/visualization/visualize.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "${env:HOME}/output/embed/embed_internvl_1000",
+                "5"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "7",
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug LastToken",
             "type": "debugpy",
             "request": "launch",

@@ -10,6 +10,7 @@ from monkey_patch.qwen_attn_patch import qwen_memory_opt, unmask_qwen2_attn
 import json 
 from torch import nn
 from peft import PeftModel
+import deepspeed
 
 def merge_peft_submodules(module: nn.Module) -> nn.Module:
     """
@@ -65,7 +66,9 @@ def internvl_embed_dataset():
         
     logger = setup_logger(training_args)
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
-    model = merge_peft_submodules(model)
+    
+    with deepspeed.zero.GatheredParameters(model.parameters(), modifier_rank=0):
+        model = merge_peft_submodules(model)
     dataset_name = data_args.eval_datasets[0]   
 
     dataset = build_contrastive_dataset(

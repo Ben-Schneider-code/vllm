@@ -66,7 +66,7 @@ class ContrastiveTrainer(Trainer):
 
           with torch.no_grad():
                with self.compute_loss_context_manager():
-                    out = model(inputs, return_prediction=True)
+                    out = model(inputs, return_outputs=True, return_prediction=True)
           loss, outputs = out
           return loss, outputs
 

@@ -1,7 +1,7 @@
 {
   "model_name_or_path": "/home/b3schnei/output/inernvl_embedding_model/checkpoint-200",
   "conv_style": "Hermes-2",
-  "output_dir": "/home/b3schnei/output/inernvl_embedding_model",
+  "output_dir": "/home/b3schnei/output/embed/internvl_embedding_model",
   "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
   "overwrite_output_dir": true,
   "force_image_size": 448,
@@ -14,7 +14,7 @@
   "use_backbone_lora": 16,
   "use_llm_lora": 16,
   "vision_select_layer": -1,
-  "dataloader_num_workers": 4,
+  "dataloader_num_workers": 12,
   "bf16": true,
   "num_train_epochs": 1,
   "per_device_train_batch_size": 128,
@@ -39,6 +39,7 @@
   "attn_mask": "bidirectional",
   "loss_type": "mean_token",
   "gather_loss": false,
+  "report_to": [],
   "eval_datasets": [
     "cc"
   ],

@@ -34,6 +34,7 @@ class IVLMT(InternVLChatModel):
             outputs["accuracy"] = acc
         if return_prediction:
             outputs["prediction"] = {
+                "meta": inputs["meta"],
                 "q": q_emb.detach(),
                 "c": c_emb.detach()
             }

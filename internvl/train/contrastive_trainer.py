@@ -26,13 +26,16 @@ class WandbLogger(WandbCallback):
 
 class ContrastiveTrainer(Trainer):
 
-     def __init__(self, *args, **kwargs):
+     def __init__(self, wandb=True, *args, **kwargs):
           super().__init__(*args, **kwargs)
-          self.wandb_callback = WandbLogger()
-          self.add_callback(self.wandb_callback)
+          self.enable_wandb=wandb
+          if self.enable_wandb:
+               self.wandb_callback = WandbLogger()
+               self.add_callback(self.wandb_callback)
 
      def log_to_wandb(self, key, value):
-          self.wandb_callback.additional_metrics[key] = value
+          if self.enable_wandb:
+               self.wandb_callback.additional_metrics[key] = value
 
      def prediction_step(
           self,

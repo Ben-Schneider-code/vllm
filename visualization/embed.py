@@ -8,6 +8,29 @@ import os
 import sys
 from monkey_patch.qwen_attn_patch import qwen_memory_opt, unmask_qwen2_attn
 import json 
+from torch import nn
+from peft import PeftModel
+
+def merge_peft_submodules(module: nn.Module) -> nn.Module:
+    """
+    Recursively merge all PEFT submodules within a PyTorch module.
+    
+    Args:
+        module (nn.Module): The PyTorch module to process.
+    
+    Returns:
+        nn.Module: The module with all PEFT submodules merged.
+    """
+    for name, child in module.named_children():
+        if isinstance(child, PeftModel):
+            # Merge the PEFT model
+            merged_model = child.merge_and_unload()
+            setattr(module, name, merged_model)
+        else:
+            # Recursively process child modules
+            merge_peft_submodules(child)
+    
+    return module
 
 def save(dataset_info: dict,
         metadata: dict,
@@ -42,7 +65,7 @@ def internvl_embed_dataset():
         
     logger = setup_logger(training_args)
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
-
+    model = merge_peft_submodules(model)
     dataset_name = data_args.eval_datasets[0]   
 
     dataset = build_contrastive_dataset(
@@ -65,7 +88,8 @@ def internvl_embed_dataset():
         train_dataset=dataset,
         eval_dataset=None,
         tokenizer=tokenizer,
-        data_collator=contrastive_data_collator
+        data_collator=contrastive_data_collator,
+        wandb=False
     )
 
     trainer.prediction_step = trainer.embed_step

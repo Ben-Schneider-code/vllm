@@ -29,11 +29,11 @@
             "justMyCode": false,
             "console": "integratedTerminal",
             "args": [
-                "${env:HOME}/output/embed/embed_internvl_1000",
+                "${env:HOME}/output/embed/internvl_embedding_model",
                 "5"
             ],
             "env": {
-                "CUDA_VISIBLE_DEVICES": "7",
+                "CUDA_VISIBLE_DEVICES": "0",
                 "PYTHONPATH": "${env:VLLM_REPO}",
                 "WANDB_MODE": "offline"
             }

@@ -2,6 +2,13 @@ import os
 import torch
 import sys
 import json
+from pathlib import Path
+import shutil
+
+ds_path = {
+    "cc": os.environ["CC_ROOT"],
+    "mscoco": os.environ["MSCOCO_ROOT"]
+}
 
 def load_saved_data(input_dir):
 
@@ -19,20 +26,30 @@ def load_saved_data(input_dir):
 
     return dataset_info, metadata, query, cand, top_k
 
-def display_img(path):
-    import matplotlib.pyplot as plt
-    import matplotlib.image as mpimg
-    image = mpimg.imread(path)
-    plt.imshow(image)
-    plt.show()
-
-def get_cand_path(pth):
-    return pth
+def get_img_path(dataset,item_path):
+    return os.path.join(ds_path[dataset], item_path)
 
 def visualize():
     path=sys.argv[1]
     dataset_info, metadata, query, cand, top_k = load_saved_data(path)
-    print("hello")
+    low = int(sys.argv[2])
+    high = int(sys.argv[3])
     
+    pos = metadata[low:high]
+    negative_indexes = top_k[1,low:high,:]
+    
+    for i in range(len(pos)):
+        query_sring = pos[i]["q_conversation"][0]["value"]
+        output_dict = {}
+        neg_data = negative_indexes[i].tolist()
+        neg_data = [metadata[int(i)] for i in neg_data]
+        for idx, item in enumerate(neg_data):
+            output_dict[str(idx)+ "_candidate.jpeg"] = get_img_path(dataset_info["dataset_name"], item["p_image"])
+        output_dir = "./visual/"+str(i)
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        for key in output_dict:
+            shutil.copyfile(output_dict[key], os.path.join(output_dir,key))
+        with open(os.path.join(output_dir,"query.txt"), "w") as f:
+            f.write(query_sring)    
 if __name__ == "__main__":
     visualize()

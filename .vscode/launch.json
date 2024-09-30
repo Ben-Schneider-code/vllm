@@ -39,6 +39,24 @@
             }
         },
         {
+            "name": "Debug Visualization",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/visualization/visualize_topk.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "/home/b3schnei/output/embed/internvl_embedding_model",
+                "0",
+                "10"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1",
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug Embed",
             "type": "debugpy",
             "request": "launch",

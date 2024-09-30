@@ -1,8 +1,6 @@
 import os
 import torch
 import sys
-import json
-import time
 
 cand_and_query_are_symmetric = True
 

@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 import torch
 from utils import save
 import sys
-
+from tqdm import tqdm
 out_dir = sys.argv[1]
 
 # Check if CUDA is available
@@ -35,7 +35,7 @@ meta=[]
 
 model.eval()  # Set the model to evaluation mode
 with torch.no_grad():  # Disable gradient calculation
-    for batch, meta_for_batch in dl:
+    for idx, (batch, meta_for_batch) in enumerate(tqdm(dl)):
         # Move inputs to GPU
         inputs = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
         
@@ -51,11 +51,13 @@ with torch.no_grad():  # Disable gradient calculation
 
         # Calculate the number of correct predictions for this batch
         correct_predictions = (predicted_matches == correct_matches).sum().item()
-        meta.append(meta_for_batch)
+        meta.extend(meta_for_batch)
         q.append(outputs.text_embeds.cpu())
         c.append(outputs.image_embeds.cpu())
         total_correct += correct_predictions
         total_samples += probs.shape[0]
+
+        #if idx == 10: break
 
 q_tensor = torch.cat(q , dim=0)
 c_tensor = torch.cat(c, dim=0)

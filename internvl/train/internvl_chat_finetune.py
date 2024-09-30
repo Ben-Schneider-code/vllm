@@ -15,8 +15,8 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import transformers
-from datasets.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter
-from datasets.mscoco import MSCOCOAdapter
+from dataset.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter
+from dataset.mscoco import MSCOCOAdapter
 from internvl.dist_utils import init_dist
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
 from internvl.model.internvl_chat import (InternVisionConfig,

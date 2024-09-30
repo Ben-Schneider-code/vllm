@@ -89,11 +89,23 @@ class MSCOCOAdapter(Dataset):
         return formatted_item
 
 def CLIP_collate_fn(batch, processor=None):
+
     text_list = [t["text"] for t in batch]
-    img_list = [i["image"] for i in batch]
-    img_list = list(map(lambda x: Image.open(x), img_list))
+    path_list = [i["image"] for i in batch]
+
+    meta = [{
+        "qid":batch[i]["text_id"],
+        "pid":batch[i]["image_id"],
+        "q_image":None,
+        "p_image":batch[i]["image"],
+        "q_conversation":batch[i]["text"],
+        "p_conversation":None,
+    } for i in range(len(text_list))]
+
+
+    img_list = list(map(lambda x: Image.open(x), path_list))
     inputs = processor(text=text_list, images=img_list, return_tensors="pt", padding=True)
-    return inputs
+    return inputs, meta
 
 def get_CLIP_collate_fn(processor):
     return partial(CLIP_collate_fn, processor=processor)

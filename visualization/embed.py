@@ -6,7 +6,7 @@ from internvl.train.contrastive_trainer import ContrastiveTrainer
 from internvl.train.internvl_chat_finetune import VLMTrainingArguments, DataTrainingArguments, ModelArguments, build_contrastive_dataset, build_eval_datasets, load_model, setup_logger
 import os
 import sys
-from monkey_patch.qwen_attn_patch import qwen_memory_opt, unmask_qwen2_attn
+from monkey_patch.qwen_attn_patch import forward_memory_opt_monkey_patch, unmask_attn_monkey_patch
 import json 
 from torch import nn
 from peft import PeftModel
@@ -40,10 +40,10 @@ def internvl_embed_dataset():
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
      
-    qwen_memory_opt()
+    forward_memory_opt_monkey_patch()
     
     if training_args.attn_mask == 'bidirectional':
-        unmask_qwen2_attn()
+        unmask_attn_monkey_patch()
         
     logger = setup_logger(training_args)
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)

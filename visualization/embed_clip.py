@@ -1,5 +1,5 @@
 from transformers import CLIPProcessor, CLIPModel
-from dataset.mscoco import MSCOCO, get_CLIP_collate_fn
+from dataset_utils.mscoco import MSCOCO, get_CLIP_collate_fn
 from torch.utils.data import DataLoader
 import torch
 from utils import save

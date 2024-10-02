@@ -15,8 +15,8 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import transformers
-from dataset.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter
-from dataset.mscoco import MSCOCOAdapter
+from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter
+from dataset_utils.mscoco import MSCOCOAdapter
 from internvl.dist_utils import init_dist
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
 from internvl.model.internvl_chat import (InternVisionConfig,
@@ -48,7 +48,7 @@ from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils.logging import (enable_default_handler,
                                         enable_explicit_format, set_verbosity)
-from monkey_patch.qwen_attn_patch import unmask_qwen2_attn, qwen_memory_opt
+from monkey_patch.qwen_attn_patch import unmask_attn_monkey_patch, forward_memory_opt_monkey_patch
 #from torch.profiler import profile, record_function, ProfilerActivity
 
 # Apply necessary patches for the transformers library
@@ -1056,10 +1056,10 @@ def main():
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
     
-    qwen_memory_opt()
+    forward_memory_opt_monkey_patch()
     
     if training_args.attn_mask == 'bidirectional':
-        unmask_qwen2_attn()
+        unmask_attn_monkey_patch()
 
     logger = setup_logger(training_args)
 

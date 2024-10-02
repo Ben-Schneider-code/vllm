@@ -22,6 +22,27 @@
             }
         },
         {
+            "name": "Debug InternVL2-8B",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${env:VLLM_REPO}",
+            "program": "${env:DEEPSPEED}",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "--include",
+                "localhost:0",
+                "--master_port",
+                "44000",
+                "${env:VLLM_REPO}/internvl/train/internvl_chat_finetune.py",
+                "${env:VLLM_REPO}/config/cc128k/cc128k_lt_bi_attn_8B.json"
+            ],
+            "env": {
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug Neg Mining",
             "type": "debugpy",
             "request": "launch",

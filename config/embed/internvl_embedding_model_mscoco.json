@@ -37,7 +37,6 @@
   "ps_version": "v2",
   "deepspeed": "./deepspeed/zero_stage3_config.json",
   "attn_mask": "bidirectional",
-  "loss_type": "mean_token",
   "report_to": [],
   "eval_datasets": [
     "mscoco"

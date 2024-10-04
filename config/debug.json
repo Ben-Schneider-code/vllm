@@ -35,7 +35,6 @@
     "ps_version": "v2",
     "deepspeed": "./deepspeed/zero_off.json",
     "report_to": "wandb",
-    "loss_type": "mean_token",
     "eval_datasets": [
         "cc",
         "mscoco"

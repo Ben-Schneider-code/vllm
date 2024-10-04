@@ -1,7 +1,6 @@
 import gc
 import json
 import logging
-import math
 import os
 import random
 import sys
@@ -933,7 +932,7 @@ def load_model(model_args, data_args, training_args, logger):
         config.ps_version = model_args.ps_version
         config.min_dynamic_patch = data_args.min_dynamic_patch
         config.max_dynamic_patch = data_args.max_dynamic_patch
-        model_template = MODEL_ARCHITECTURE[](model_args, data_args, training_args)
+        model_template = MODEL_ARCHITECTURE[model_args.model_architecture](model_args, data_args, training_args)
         model = model_template.from_pretrained(
             model_args.model_name_or_path, torch_dtype=torch.bfloat16, config=config)
     else:
@@ -1050,9 +1049,9 @@ def main():
     
     forward_memory_opt_monkey_patch()
     
-    if MODEL_ARCHITECTURE[model_args["model_architecture"]].attn_mask == 'bidirectional':
+    if MODEL_ARCHITECTURE[model_args.model_architecture].attn_mask == 'bidirectional':
         unmask_attn_monkey_patch()
-    elif MODEL_ARCHITECTURE[model_args["model_architecture"]].attn_mask != 'casual':
+    elif MODEL_ARCHITECTURE[model_args.model_architecture].attn_mask != 'casual':
         raise Exception("NotImplementedError")
     
     logger = setup_logger(training_args)

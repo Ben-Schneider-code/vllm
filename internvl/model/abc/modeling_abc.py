@@ -46,7 +46,7 @@ class IVLMT(InternVLChatModel):
 class IVLLT(InternVLChatModel):
     
     attn_mask = "bidirectional"
-    
+
     def forward(self, inputs, return_outputs=False, return_prediction=False):
 
         query = inputs["query"]
@@ -83,5 +83,5 @@ class IVLLT(InternVLChatModel):
      
 MODEL_ARCHITECTURE = {
     "last_token": IVLLT,
-     "mean_token": IVLMT
+    "mean_token": IVLMT
 }

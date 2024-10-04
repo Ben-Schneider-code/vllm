@@ -1054,6 +1054,7 @@ def main():
         unmask_attn_monkey_patch()
     elif MODEL_ARCHITECTURE[model_args["model_architecture"]].attn_mask != 'casual':
         raise Exception("NotImplementedError")
+    
     logger = setup_logger(training_args)
 
     # Detecting last checkpoint and eventually continue from last checkpoint.

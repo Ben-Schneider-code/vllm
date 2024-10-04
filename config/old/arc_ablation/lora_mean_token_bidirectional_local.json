@@ -38,6 +38,7 @@
   "deepspeed": "./deepspeed/zero_lora.json",
   "report_to": "wandb",
   "attn_mask": "bidirectional",
+  "loss_type": "mean_token",
   "eval_datasets": [
     "cc",
     "mscoco"

@@ -39,7 +39,6 @@
   "report_to": "wandb",
   "attn_mask": "causal",
   "loss_type": "last_token",
-  "gather_loss": true,
   "eval_datasets": [
     "cc",
     "mscoco"

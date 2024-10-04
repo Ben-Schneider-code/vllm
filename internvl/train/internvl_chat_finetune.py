@@ -38,7 +38,8 @@ from internvl.train.dataset import (build_transform,
                                     preprocess_phi3)
 
 from internvl.train.mbeir_dataset import MbeirAdapter
-from internvl.train.model_factory import model_factory
+#internvl/model/abc/modeling_abc.py
+from internvl.model.abc.modeling_abc import MODEL_ARCHITECTURE
 from internvl.train.trainer_monkey_patch import replace_create_optimizer
 from PIL import Image, ImageFile, PngImagePlugin, UnidentifiedImageError
 from torch.utils.data import Dataset
@@ -147,25 +148,16 @@ class ModelArguments:
         metadata={'help': 'Dropout rate for LORA layers'}
     )
 
+    model_architecture: str = field(
+        default=None,
+        metadata={'help': 'The architecture (model defintion)'}
+    )
+
 @dataclass
 class VLMTrainingArguments(TrainingArguments):
     loss_type: Optional[str] = field(
         default=None,
         metadata={"help": "Loss type used in ContrastiveTrainer"}
-    )
-
-    attn_mask: Optional[str] = field(
-        default="causal",
-        metadata={"help": "The mask to apply to the underlying langauge model"}
-    )
-
-    gather_loss: bool = field(
-    default=False,
-    metadata={
-        'help': (
-            'Whether the contrastive loss should be gathered before loss is computed'
-        )
-    },
     )
 
 
@@ -941,7 +933,7 @@ def load_model(model_args, data_args, training_args, logger):
         config.ps_version = model_args.ps_version
         config.min_dynamic_patch = data_args.min_dynamic_patch
         config.max_dynamic_patch = data_args.max_dynamic_patch
-        model_template = model_factory(model_args, data_args, training_args)
+        model_template = MODEL_ARCHITECTURE[](model_args, data_args, training_args)
         model = model_template.from_pretrained(
             model_args.model_name_or_path, torch_dtype=torch.bfloat16, config=config)
     else:
@@ -1058,9 +1050,11 @@ def main():
     
     forward_memory_opt_monkey_patch()
     
-    if training_args.attn_mask == 'bidirectional':
+    if MODEL_ARCHITECTURE[model_args["model_architecture"]].attn_mask == 'bidirectional':
         unmask_attn_monkey_patch()
-
+    elif MODEL_ARCHITECTURE[model_args["model_architecture"]].attn_mask != 'casual':
+        raise Exception("NotImplementedError")
+    
     logger = setup_logger(training_args)
 
     # Detecting last checkpoint and eventually continue from last checkpoint.

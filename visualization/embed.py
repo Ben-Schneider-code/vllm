@@ -1,6 +1,7 @@
 import torch
 from transformers import HfArgumentParser
 from transformers.trainer_utils import PredictionOutput
+from internvl.model.abc.modeling_abc import MODEL_ARCHITECTURE
 from internvl.patch.pad_data_collator import contrastive_data_collator
 from internvl.train.contrastive_trainer import ContrastiveTrainer
 from internvl.train.internvl_chat_finetune import VLMTrainingArguments, DataTrainingArguments, ModelArguments, build_contrastive_dataset, build_eval_datasets, load_model, setup_logger
@@ -42,8 +43,10 @@ def internvl_embed_dataset():
      
     forward_memory_opt_monkey_patch()
     
-    if training_args.attn_mask == 'bidirectional':
+    if MODEL_ARCHITECTURE[model_args["model_architecture"]].attn_mask == 'bidirectional':
         unmask_attn_monkey_patch()
+    elif MODEL_ARCHITECTURE[model_args["model_architecture"]].attn_mask != 'casual':
+        raise Exception("NotImplementedError")
         
     logger = setup_logger(training_args)
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)

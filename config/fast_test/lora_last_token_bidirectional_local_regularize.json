@@ -40,6 +40,5 @@
   "report_to": "wandb",
   "attn_mask": "bidirectional",
   "loss_type": "last_token",
-  "gather_loss": false,
   "lora_dropout": 0.05
 }

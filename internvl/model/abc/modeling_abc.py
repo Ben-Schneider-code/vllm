@@ -5,6 +5,8 @@ from .abc_util import *
 
 class IVLMT(InternVLChatModel):
 
+    attn_mask = "bidirectional"
+
     def forward(self, inputs, return_outputs=False, return_prediction=False):
         query = inputs["query"]
         candidate = inputs["pos_cand"]
@@ -43,7 +45,9 @@ class IVLMT(InternVLChatModel):
 
 class IVLLT(InternVLChatModel):
     
-     def forward(self, inputs, return_outputs=False, return_prediction=False):
+    attn_mask = "bidirectional"
+    
+    def forward(self, inputs, return_outputs=False, return_prediction=False):
 
         query = inputs["query"]
         candidate = inputs["pos_cand"]
@@ -76,3 +80,8 @@ class IVLLT(InternVLChatModel):
             }
 
         return (loss, outputs) if return_outputs or return_prediction else loss
+     
+MODEL_ARCHITECTURE = {
+    "last_token": IVLLT,
+     "mean_token": IVLMT
+}

@@ -932,7 +932,7 @@ def load_model(model_args, data_args, training_args, logger):
         config.ps_version = model_args.ps_version
         config.min_dynamic_patch = data_args.min_dynamic_patch
         config.max_dynamic_patch = data_args.max_dynamic_patch
-        model_template = MODEL_ARCHITECTURE[model_args.model_architecture](model_args, data_args, training_args)
+        model_template = MODEL_ARCHITECTURE[model_args.model_architecture]
         model = model_template.from_pretrained(
             model_args.model_name_or_path, torch_dtype=torch.bfloat16, config=config)
     else:

@@ -182,15 +182,20 @@ class ContrastiveTrainer(Trainer):
      def compute_loss(self, model, inputs, return_outputs=False):
 
           loss, outputs = model(inputs, return_outputs=True)
-          self.log_output(loss, outputs, return_outputs)
+          self.log_output(dict(outputs, **{"loss": loss}), return_outputs)
 
           return (loss, outputs) if return_outputs else loss
 
      def log_output(self, loss, outputs, return_outputs):
-          log_acc = outputs["accuracy"].detach().clone()
-          log_loss = loss.detach().clone()
-          dist.all_reduce(log_acc,op=dist.ReduceOp.SUM)
-          dist.all_reduce(log_loss,op=dist.ReduceOp.SUM)
+          
+          for k, v in outputs.items():
+               if isinstance(v, torch.Tensor):
+                    v = v.detach()
+                    dist.all_reduce(v)
+                    v = v / dist.get_world_size()
+
+               if not return_outputs and dist.get_rank() == 0:
+                    self.log_to_wandb(k,v)
 
           # log only on main process
           if not return_outputs and dist.get_rank() == 0:

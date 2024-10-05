@@ -186,7 +186,7 @@ class ContrastiveTrainer(Trainer):
 
           return (loss, outputs) if return_outputs else loss
 
-     def log_output(self, loss, outputs, return_outputs):
+     def log_output(self, outputs, return_outputs):
           
           for k, v in outputs.items():
                if isinstance(v, torch.Tensor):
@@ -196,13 +196,6 @@ class ContrastiveTrainer(Trainer):
 
                if not return_outputs and dist.get_rank() == 0:
                     self.log_to_wandb(k,v)
-
-          # log only on main process
-          if not return_outputs and dist.get_rank() == 0:
-               world_size = dist.get_world_size()
-               self.log_to_wandb("local_accuracy", log_acc/world_size)
-               self.log_to_wandb("local_loss", log_loss/world_size)
-
 
      def _get_train_sampler(self) -> Optional[torch.utils.data.Sampler]:
           return RandomSampler(self.train_dataset)

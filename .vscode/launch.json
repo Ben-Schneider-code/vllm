@@ -10,7 +10,7 @@
             "console": "integratedTerminal",
             "args": [
                 "--include",
-                "localhost:7",
+                "localhost:0",
                 "--master_port",
                 "44000",
                 "${env:VLLM_REPO}/internvl/train/internvl_chat_finetune.py",

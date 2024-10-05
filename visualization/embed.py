@@ -43,9 +43,9 @@ def internvl_embed_dataset():
      
     forward_memory_opt_monkey_patch()
     
-    if MODEL_ARCHITECTURE[model_args["model_architecture"]].attn_mask == 'bidirectional':
+    if MODEL_ARCHITECTURE[model_args.model_architecture].attn_mask == 'bidirectional':
         unmask_attn_monkey_patch()
-    elif MODEL_ARCHITECTURE[model_args["model_architecture"]].attn_mask != 'casual':
+    elif MODEL_ARCHITECTURE[model_args.model_architecture].attn_mask != 'casual':
         raise Exception("NotImplementedError")
         
     logger = setup_logger(training_args)

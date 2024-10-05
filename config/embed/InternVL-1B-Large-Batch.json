@@ -1,7 +1,7 @@
 {
-    "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-1B",
+    "model_name_or_path": "/home/b3schnei/output/internvl_very_large_batch_size",
     "conv_style": "Hermes-2",
-    "output_dir": "/home/b3schnei/output/internvl_very_large_batch_size",
+    "output_dir": "/home/b3schnei/output/embed/internvl_very_large_batch_size",
     "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
     "overwrite_output_dir": true,
     "force_image_size": 448,
@@ -35,7 +35,7 @@
     "remove_unused_columns": false,
     "use_thumbnail": true,
     "ps_version": "v2",
-    "deepspeed": "./deepspeed/zero_stage3_config_2.json",
+    "deepspeed": "./deepspeed/zero_off.json",
     "report_to": "wandb",
     "model_architecture": "mean_token_gathered_loss",
     "eval_datasets": [

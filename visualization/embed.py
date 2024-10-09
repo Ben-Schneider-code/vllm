@@ -8,11 +8,12 @@ from internvl.train.internvl_chat_finetune import VLMTrainingArguments, DataTrai
 import os
 import sys
 from monkey_patch.qwen_attn_patch import forward_memory_opt_monkey_patch, unmask_attn_monkey_patch
-import json 
 from torch import nn
 from peft import PeftModel
 import deepspeed
 from utils import save
+from dataclasses import asdict
+
 
 def merge_peft_submodules(module: nn.Module) -> nn.Module:
     """
@@ -37,7 +38,7 @@ def merge_peft_submodules(module: nn.Module) -> nn.Module:
 
 
 def internvl_embed_dataset():
-    
+    output_paths = []
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
      
@@ -101,13 +102,21 @@ def internvl_embed_dataset():
         dataset_info = {
             "model_name": model_args.model_name_or_path,
             "dataset_name": dataset_name,
-            "model_args": model_args.asdict(),
-            "training_args": training_args.asdict(),
-            "data_args": data_args.asdict()
+            "model_args": asdict(model_args),
+            "training_args": asdict(training_args),
+            "data_args": asdict(data_args)
         }
-        
-        save(dataset_info, meta,q,c,os.path.join(training_args.output_dir, dataset_name))
+        path = os.path.join(training_args.output_dir, dataset_name)
+        save(dataset_info, meta,q,c,path)
+        output_paths.append(path)
         print(output.metrics)
+    return output_paths
 
 if __name__ == "__main__":
-    internvl_embed_dataset()
+    output_paths = internvl_embed_dataset()
+
+    neg_mine = 10
+    if neg_mine > 0:
+        from visualization.neg_mine import compute_topk
+        for path in output_paths:
+            compute_topk(path, neg_mine)

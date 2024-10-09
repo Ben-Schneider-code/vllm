@@ -41,7 +41,7 @@ def batch(query, cand, idx, batch_size, top_k):
 
     return score.detach().cpu(), topk_idx.detach().cpu(), mask_sum_norm.detach().cpu(), scores_for_answer.squeeze(dim=-1).detach().cpu()
 
-def compute_topk():
+def compute_topk(path, top_k):
 
     with torch.no_grad():
         score_list = []
@@ -53,8 +53,6 @@ def compute_topk():
         scores_of_answer = []
         
         idx = 0
-        top_k = int(sys.argv[2])
-        path = sys.argv[1]
         _, _, query, cand = load_saved_data(path)
         batch_size = 3_000
 
@@ -79,5 +77,8 @@ def compute_topk():
         torch.save(scores_of_answer, os.path.join(path,"absolute_scoring.pt"))
 
 if __name__ == "__main__":
-    compute_topk()
+    top_k = int(sys.argv[2])
+    path = sys.argv[1]
+
+    compute_topk(path, top_k)
     print("done")

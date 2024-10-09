@@ -1,7 +1,7 @@
 {
   "model_name_or_path": "/home/b3schnei/output/inernvl_embedding_model/checkpoint-200",
   "conv_style": "Hermes-2",
-  "output_dir": "/home/b3schnei/output/embed/internvl_embedding_model",
+  "output_dir": "/home/b3schnei/output/embed/internvl_embedding_model_test_5",
   "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
   "overwrite_output_dir": true,
   "force_image_size": 448,
@@ -40,7 +40,8 @@
   "model_architecture": "mean_token",
   "report_to": [],
   "eval_datasets": [
-    "cc"
+    "cc",
+    "mscoco"
   ],
   "eval_steps_per_dataset": 20,
   "evaluation_strategy": "steps",

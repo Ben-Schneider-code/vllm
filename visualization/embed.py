@@ -42,7 +42,7 @@ def internvl_embed_dataset():
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
      
     forward_memory_opt_monkey_patch()
-    
+
     if MODEL_ARCHITECTURE[model_args.model_architecture].attn_mask == 'bidirectional':
         unmask_attn_monkey_patch()
     elif MODEL_ARCHITECTURE[model_args.model_architecture].attn_mask != 'casual':
@@ -53,56 +53,61 @@ def internvl_embed_dataset():
     
     with deepspeed.zero.GatheredParameters(model.parameters(), modifier_rank=0):
         model = merge_peft_submodules(model)
-    dataset_name = data_args.eval_datasets[0]   
 
-    dataset = build_contrastive_dataset(
-    data_args,
-    tokenizer,
-    tcs_loader,
-    model,
-    group_by_length=False,
-    dynamic_image_size=False,
-    use_thumbnail=False,
-    min_dynamic_patch=1,
-    max_dynamic_patch=12,
-    normalize_type='imagenet',
-    dataset_name = dataset_name
-    )
+    for dataset_name in data_args.eval_datasets:
+        dataset = build_contrastive_dataset(
+        data_args,
+        tokenizer,
+        tcs_loader,
+        model,
+        group_by_length=False,
+        dynamic_image_size=False,
+        use_thumbnail=False,
+        min_dynamic_patch=1,
+        max_dynamic_patch=12,
+        normalize_type='imagenet',
+        dataset_name = dataset_name
+        )
+        # REMOVE
+        dataset = torch.utils.data.Subset(dataset, list(range(1000)))
 
-    trainer = ContrastiveTrainer(
-        model=model,
-        args=training_args,
-        train_dataset=dataset,
-        eval_dataset=None,
-        tokenizer=tokenizer,
-        data_collator=contrastive_data_collator,
-        wandb=False
-    )
+        trainer = ContrastiveTrainer(
+            model=model,
+            args=training_args,
+            train_dataset=dataset,
+            eval_dataset=None,
+            tokenizer=tokenizer,
+            data_collator=contrastive_data_collator,
+            wandb=False
+        )
 
-    trainer.prediction_step = trainer.embed_step
-    output: PredictionOutput  = trainer.predict(dataset)
+        trainer.prediction_step = trainer.embed_step
+        output: PredictionOutput  = trainer.predict(dataset)
 
-    preds = output.predictions
-    
-    meta = []
-    q = []
-    c = []
+        preds = output.predictions
+        
+        meta = []
+        q = []
+        c = []
 
-    for i in range(len(preds)):
-        meta.extend(preds[i]["meta"])
-        q.extend(preds[i]["q"])
-        c.extend(preds[i]["c"])
+        for i in range(len(preds)):
+            meta.extend(preds[i]["meta"])
+            q.extend(preds[i]["q"])
+            c.extend(preds[i]["c"])
 
-    q = torch.stack(q, dim=0)
-    c = torch.stack(c, dim=0)
-    
-    dataset_info = {
-        "model_name": model_args.model_name_or_path,
-        "dataset_name": dataset_name
-    }
-    
-    save(dataset_info, meta,q,c,training_args.output_dir)
-    print(output.metrics)
+        q = torch.stack(q, dim=0)
+        c = torch.stack(c, dim=0)
+        
+        dataset_info = {
+            "model_name": model_args.model_name_or_path,
+            "dataset_name": dataset_name,
+            "model_args": model_args.asdict(),
+            "training_args": training_args.asdict(),
+            "data_args": data_args.asdict()
+        }
+        
+        save(dataset_info, meta,q,c,os.path.join(training_args.output_dir, dataset_name))
+        print(output.metrics)
 
 if __name__ == "__main__":
     internvl_embed_dataset()

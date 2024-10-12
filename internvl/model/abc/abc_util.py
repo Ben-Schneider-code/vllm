@@ -51,15 +51,15 @@ def get_mean_token_embed(input_ids, hidden_state, padding_token_id):
      mean_token_emb = torch.mean(masked_states,dim=1) # Average
      return mean_token_emb
 
-def compute_contrastive_loss(q_embeds, p_embeds):  # [batch_size, embed_dim]
+def compute_contrastive_loss(q_embeds, p_embeds, temperature=1.0, label_smoothing=0.0):
 
     bs = q_embeds.size(0)
 
-    score = torch.matmul(q_embeds, p_embeds.t())  # * self.logit_scale  # [bs, bs]
+    score = torch.matmul(q_embeds, p_embeds.t()) / temperature
     sim_targets = torch.arange(bs).to(score.device)  # [bs]
 
     # compute loss
-    loss = F.cross_entropy(score, sim_targets)
+    loss = F.cross_entropy(score, sim_targets, label_smoothing=label_smoothing)
     _max_score, max_idxs = torch.max(score, 1)
 
     accuracy = (max_idxs == sim_targets).sum() / bs

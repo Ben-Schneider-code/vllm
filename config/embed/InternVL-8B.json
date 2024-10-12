@@ -35,7 +35,7 @@
     "remove_unused_columns": false,
     "use_thumbnail": true,
     "ps_version": "v2",
-    "deepspeed": "./deepspeed/zero_off.json",
+    "deepspeed": "./deepspeed/zero_stage3_config_2.json",
     "report_to": "wandb",
     "model_architecture": "mean_token",
     "eval_datasets": [

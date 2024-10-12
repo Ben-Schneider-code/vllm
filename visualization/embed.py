@@ -40,7 +40,7 @@ def merge_peft_submodules(module: nn.Module) -> nn.Module:
 def internvl_embed_dataset():
     output_paths = []
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
-    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-2]))
      
     forward_memory_opt_monkey_patch()
 
@@ -69,9 +69,6 @@ def internvl_embed_dataset():
         normalize_type='imagenet',
         dataset_name = dataset_name
         )
-
-        # REMOVE
-        dataset = torch.utils.data.Subset(dataset, list(range(1000)))
 
         trainer = ContrastiveTrainer(
             model=model,
@@ -113,11 +110,11 @@ def internvl_embed_dataset():
         print(output.metrics)
     return output_paths
 
+# params - config_path and top_k
 if __name__ == "__main__":
-    assert(len(sys.argv)==3, "Provide both to config and top_k mining number")
     output_paths = internvl_embed_dataset()
 
-    neg_mine = int(sys.argv[2])
+    neg_mine = int(sys.argv[-1])
 
     if neg_mine > 0:
         from visualization.neg_mine import compute_topk

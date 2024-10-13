@@ -166,7 +166,7 @@ class IVLTCO(InternVLChatModel):
         outputs = {}
         if return_outputs:
             outputs["accuracy"] = acc
-            outputs["temperature"] = self.temperature.detach().clone()
+            outputs["temperature"] = self.temperature
         if return_prediction:
             outputs["prediction"] = {
                 "meta": inputs["meta"],

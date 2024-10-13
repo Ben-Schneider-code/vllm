@@ -16,7 +16,7 @@
   "vision_select_layer": -1,
   "dataloader_num_workers": 4,
   "bf16": true,
-  "num_train_epochs": 3,
+  "num_train_epochs": 1,
   "per_device_train_batch_size": 200,
   "gradient_accumulation_steps": 4,
   "evaluation_strategy": "no",

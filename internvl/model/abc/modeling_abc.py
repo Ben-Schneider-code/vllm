@@ -133,8 +133,8 @@ class IVLTCO(InternVLChatModel):
     
     attn_mask = "bidirectional"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(args,kwargs)
+    def __init__(self, config, *args, **kwargs):
+        super().__init__(config, *args, **kwargs)
         self.temperature = torch.nn.Parameter(torch.tensor(0.2,
                                                             requires_grad=True,
                                                             dtype=torch.float32))

@@ -135,7 +135,7 @@ class IVLTCO(InternVLChatModel):
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.temperature = torch.nn.Parameter(torch.tensor(0.2,
+        self.temperature = torch.nn.Parameter(torch.tensor(0.1,
                                                             requires_grad=True,
                                                             dtype=torch.float32))
 

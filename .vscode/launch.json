@@ -111,7 +111,8 @@
             ],
             "env": {
                 "PYTHONPATH": "${env:VLLM_REPO}",
-                "WANDB_MODE": "offline"
+                "WANDB_MODE": "offline",
+                "CUDA_VISIBLE_DEVICES": "0"
             }
         },
         {

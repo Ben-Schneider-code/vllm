@@ -1,7 +1,7 @@
 {
     "model_name_or_path": "/home/b3schnei/output/InternVL-1B-Optimized-Temperature",
     "conv_style": "Hermes-2",
-    "output_dir": "/home/b3schnei/output/embed/InternVL-1B-Optimized-Temperature",
+    "output_dir": "/home/b3schnei/output/embed/InternVL-1B-Optimized-Temperature-Repro",
     "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
     "overwrite_output_dir": true,
     "force_image_size": 448,
@@ -36,8 +36,8 @@
     "use_thumbnail": true,
     "ps_version": "v2",
     "report_to": "wandb",
-    "bf16_full_eval": true,
     "model_architecture": "IVLTCO",
+    "bf16_full_eval": true,
     "eval_datasets": [
         "cc",
         "mscoco"

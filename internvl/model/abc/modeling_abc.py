@@ -1,4 +1,3 @@
-
 from internvl.model.internvl_chat.modeling_internvl_chat import InternVLChatModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from .abc_util import *
@@ -107,7 +106,12 @@ class IVLTCOS(InternVLChatModel):
             }
 
         return (loss, outputs) if return_outputs or return_prediction else loss
-     
+
+# TODO add update these model archs to support
+# 1. Gathered loss
+# 2. Cross attn adpater head
+# 3. MLP Adapter head
+# 4. Hard negatives
 MODEL_ARCHITECTURE = {
     "IVLTCO": IVLTCO,
     "IVLTCOS": IVLTCOS,

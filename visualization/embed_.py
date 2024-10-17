@@ -10,7 +10,6 @@ import sys
 from monkey_patch.qwen_attn_patch import forward_memory_opt_monkey_patch, unmask_attn_monkey_patch
 from torch import nn
 from peft import PeftModel
-import deepspeed
 from utils import save
 from dataclasses import asdict
 

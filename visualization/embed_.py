@@ -41,7 +41,8 @@ def internvl_embed_dataset():
     output_paths = []
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-2]))
-     
+    assert training_args.deepspeed is None, "Embedding does not support deepspeed"
+
     forward_memory_opt_monkey_patch()
 
     if MODEL_ARCHITECTURE[model_args.model_architecture].attn_mask == 'bidirectional':
@@ -52,8 +53,7 @@ def internvl_embed_dataset():
     logger = setup_logger(training_args)
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
     
-    with deepspeed.zero.GatheredParameters(model.parameters(), modifier_rank=0):
-        model = merge_peft_submodules(model)
+    model = merge_peft_submodules(model)
 
     for dataset_name in data_args.eval_datasets:
         dataset = build_contrastive_dataset(
@@ -69,7 +69,6 @@ def internvl_embed_dataset():
         normalize_type='imagenet',
         dataset_name = dataset_name
         )
-        
 
         trainer = ContrastiveTrainer(
             model=model,

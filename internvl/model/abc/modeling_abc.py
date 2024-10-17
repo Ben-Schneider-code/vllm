@@ -165,8 +165,12 @@ class IVLTCO(InternVLChatModel):
         
         outputs = {}
         if return_outputs:
+            temperature = self.temperature.data.detach().cpu()
+            # zero3 guard
+            if temperature.numel() == 0: temperature = torch.tensor([-1])
+
             outputs["accuracy"] = acc
-            outputs["temperature"] = self.temperature
+            outputs["temperature"] = temperature
         if return_prediction:
             outputs["prediction"] = {
                 "meta": inputs["meta"],

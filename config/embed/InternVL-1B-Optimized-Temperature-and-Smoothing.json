@@ -1,7 +1,7 @@
 {
-    "model_name_or_path": "/home/b3schnei/output/InternVL-1B-Optimized-Temperature",
+    "model_name_or_path": "/home/b3schnei/output/InternVL-1B-Optimized-Temperature-and-Smoothing",
     "conv_style": "Hermes-2",
-    "output_dir": "/home/b3schnei/output/embed/InternVL-1B-Optimized-Temperature",
+    "output_dir": "/home/b3schnei/output/embed/InternVL-1B-Optimized-Temperature-and-Smoothing",
     "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
     "overwrite_output_dir": true,
     "force_image_size": 448,
@@ -21,7 +21,7 @@
     "gradient_accumulation_steps": 1,
     "save_strategy": "steps",
     "save_steps": 200,
-    "save_total_limit": 100,
+    "save_total_limit": 2,
     "learning_rate": 4e-5,
     "weight_decay": 0.01,
     "warmup_ratio": 0.03,
@@ -36,7 +36,8 @@
     "use_thumbnail": true,
     "ps_version": "v2",
     "report_to": "wandb",
-    "model_architecture": "IVLTCO",
+    "model_architecture": "IVLTCOS",
+    "bf16_full_eval": true,
     "eval_datasets": [
         "cc",
         "mscoco"

@@ -90,7 +90,24 @@
                 "--master_port",
                 "44000",
                 "${env:VLLM_REPO}/visualization/embed.py",
-                "${env:VLLM_REPO}/config/embed/internvl_embedding_model.json"
+                "${env:VLLM_REPO}/config/embed/InternVL-1B-Optimized-Temperature.json",
+                "10"
+            ],
+            "env": {
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
+            "name": "Debug Embed_",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/visualization/embed_.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "${env:VLLM_REPO}/config/embed/InternVL-1B-Optimized-Temperature.json",
+                "10"
             ],
             "env": {
                 "PYTHONPATH": "${env:VLLM_REPO}",

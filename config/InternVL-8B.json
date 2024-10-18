@@ -1,7 +1,7 @@
 {
-    "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-1B",
+    "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-8B",
     "conv_style": "Hermes-2",
-    "output_dir": "/home/b3schnei/output/InternVL-1B-TGS",
+    "output_dir": "/home/b3schnei/output/InternVL-8B",
     "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
     "overwrite_output_dir": true,
     "force_image_size": 448,
@@ -17,7 +17,7 @@
     "dataloader_num_workers": 4,
     "bf16": true,
     "num_train_epochs": 1,
-    "per_device_train_batch_size": 333,
+    "per_device_train_batch_size": 128,
     "gradient_accumulation_steps": 1,
     "save_strategy": "steps",
     "save_steps": 200,
@@ -37,7 +37,7 @@
     "ps_version": "v2",
     "deepspeed": "./deepspeed/zero_off.json",
     "report_to": "wandb",
-    "model_architecture": "IVLTGS",
+    "model_architecture": "IVLTCOS",
     "eval_datasets": [
         "cc",
         "mscoco"
@@ -46,5 +46,5 @@
     "evaluation_strategy": "steps",
     "per_device_eval_batch_size": 128,
     "eval_steps": 25,
-    "training_dataset_name": "cc"
+    "training_dataset_name": "cc128k"
 }

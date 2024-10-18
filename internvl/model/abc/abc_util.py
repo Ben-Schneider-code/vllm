@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import torch.distributed as dist
 
-def compute_gathered_loss(q_emb, c_emb):
+def compute_gathered_loss(q_emb, c_emb, temperature=1.0, label_smoothing=0.0):
     """
     Compute the loss by gathering across GPUs.
     """
@@ -28,8 +28,8 @@ def compute_gathered_loss(q_emb, c_emb):
     q_global = torch.cat(q_global, dim=0)
     c_global = torch.cat(c_global, dim=0)
 
-    loss_global, acc_global = compute_contrastive_loss(q_global, c_global)
-    loss_local, acc_local = compute_contrastive_loss(q_emb.detach(), c_emb.detach())
+    loss_global, acc_global = compute_contrastive_loss(q_global, c_global, temperature=temperature, label_smoothing=label_smoothing)
+    loss_local, acc_local = compute_contrastive_loss(q_emb.detach(), c_emb.detach(), temperature=temperature, label_smoothing=label_smoothing)
     
     dist.all_reduce(acc_local,op=dist.ReduceOp.SUM)
     dist.all_reduce(loss_local,op=dist.ReduceOp.SUM)

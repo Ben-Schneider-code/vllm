@@ -50,8 +50,8 @@ class IVLTCO(InternVLChatModel):
         if return_prediction:
             outputs["prediction"] = {
                 "meta": inputs["meta"],
-                "q": q_emb.detach(),
-                "c": c_emb.detach()
+                "q": q_emb.detach().cpu(),
+                "c": c_emb.detach().cpu()
             }
 
         return (loss, outputs) if return_outputs or return_prediction else loss
@@ -101,10 +101,9 @@ class IVLTCOS(InternVLChatModel):
         if return_prediction:
             outputs["prediction"] = {
                 "meta": inputs["meta"],
-                "q": q_emb.detach(),
-                "c": c_emb.detach()
+                "q": q_emb.detach().cpu(),
+                "c": c_emb.detach().cpu()
             }
-
         return (loss, outputs) if return_outputs or return_prediction else loss
 
 class IVLTGS(InternVLChatModel):
@@ -153,8 +152,8 @@ class IVLTGS(InternVLChatModel):
         if return_prediction:
             outputs["prediction"] = {
                 "meta": inputs["meta"],
-                "q": q_emb.detach(),
-                "c": c_emb.detach()
+                "q": q_emb.detach().cpu(),
+                "c": c_emb.detach().cpu()
             }
 
         return (loss, outputs) if return_outputs or return_prediction else loss

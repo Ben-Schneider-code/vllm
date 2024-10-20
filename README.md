@@ -53,5 +53,5 @@
 ### Resources:  
 [NV-Embed](https://arxiv.org/abs/2405.17428)  
 [LLM2VEC](https://arxiv.org/abs/2404.05961)  
-[NV-Retriever](https://arxiv.org/pdf/2407.15831) - Haven't read yet.  
-[ALIGNModel](https://arxiv.org/abs/2102.05918) - Haven't read yet.
+[NV-Retriever](https://arxiv.org/pdf/2407.15831)
+[ALIGNModel](https://arxiv.org/abs/2102.05918)

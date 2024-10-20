@@ -185,7 +185,7 @@ class IVLMLP(InternVLChatModel):
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.mlp_head = MLP(config.hidden_size)
+        self.mlp_head = MLP(config.llm_config.hidden_size)
         self.temperature = torch.nn.Parameter(torch.tensor(0.1,
                                                             requires_grad=True,
                                                             dtype=torch.float32))
@@ -237,7 +237,7 @@ class IVLMLPL(InternVLChatModel):
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.mlp_head = MLP(config.hidden_size, 4096)
+        self.mlp_head = MLP(config.llm_config.hidden_size, 4096)
         self.temperature = torch.nn.Parameter(torch.tensor(0.1,
                                                             requires_grad=True,
                                                             dtype=torch.float32))
@@ -290,8 +290,8 @@ class IVLMLP2(InternVLChatModel):
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.mlp_q = MLP(config.hidden_size)
-        self.mlp_c = MLP(config.hidden_size)
+        self.mlp_q = MLP(config.llm_config.hidden_size)
+        self.mlp_c = MLP(config.llm_config.hidden_size)
         self.temperature = torch.nn.Parameter(torch.tensor(0.1,
                                                             requires_grad=True,
                                                             dtype=torch.float32))

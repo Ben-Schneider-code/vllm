@@ -1,7 +1,7 @@
 {
     "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-1B",
     "conv_style": "Hermes-2",
-    "output_dir": "/home/b3schnei/output/InternVL-1B-Temperature",
+    "output_dir": "/home/b3schnei/output/InternVL-1B-MLP",
     "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
     "overwrite_output_dir": true,
     "force_image_size": 448,
@@ -21,7 +21,7 @@
     "gradient_accumulation_steps": 1,
     "save_strategy": "steps",
     "save_steps": 200,
-    "save_total_limit": 100,
+    "save_total_limit": 2,
     "learning_rate": 4e-5,
     "weight_decay": 0.01,
     "warmup_ratio": 0.03,
@@ -37,7 +37,7 @@
     "ps_version": "v2",
     "deepspeed": "./deepspeed/zero_off.json",
     "report_to": "wandb",
-    "model_architecture": "IVLTCO",
+    "model_architecture": "IVLMLP",
     "eval_datasets": [
         "cc",
         "mscoco"
@@ -45,6 +45,6 @@
     "eval_steps_per_dataset": 5,
     "evaluation_strategy": "steps",
     "per_device_eval_batch_size": 128,
-    "eval_steps": 25,
-    "training_dataset_name": "cc128k"
+    "eval_steps": 50,
+    "training_dataset_name": "cc"
 }

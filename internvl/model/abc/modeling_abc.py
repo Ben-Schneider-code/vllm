@@ -1,6 +1,7 @@
 from internvl.model.internvl_chat.modeling_internvl_chat import InternVLChatModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from .abc_util import *
+from torch import nn
 
 class IVLTCO(InternVLChatModel):
     """
@@ -11,7 +12,7 @@ class IVLTCO(InternVLChatModel):
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.temperature = torch.nn.Parameter(torch.tensor(0.1,
+        self.temperature = nn.Parameter(torch.tensor(0.1,
                                                             requires_grad=True,
                                                             dtype=torch.float32))
 
@@ -66,7 +67,7 @@ class IVLTCOS(InternVLChatModel):
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.temperature = torch.nn.Parameter(torch.tensor(0.1,
+        self.temperature = nn.Parameter(torch.tensor(0.1,
                                                             requires_grad=True,
                                                             dtype=torch.float32))
 
@@ -116,11 +117,9 @@ class IVLTCOS(InternVLChatModel):
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.temperature = torch.nn.Parameter(torch.tensor(0.1,
+        self.temperature = nn.Parameter(torch.tensor(0.1,
                                                             requires_grad=True,
                                                             dtype=torch.float32))
-        
-
 
     def forward(self, inputs, return_outputs=False, return_prediction=False):
         query = inputs["query"]
@@ -158,21 +157,25 @@ class IVLTCOS(InternVLChatModel):
             }
         return (loss, outputs) if return_outputs or return_prediction else loss
 
-class MLP(torch.nn.Module):
+class MLP(nn.Module):
 
-    def __init__(self, hidden_size: int, output_size: int=None):
+    def __init__(self, embed_size: int, hidden_size: int=None):
         super().__init__()
-        self.hidden_size = hidden_size
-        self.output_size = output_size if output_size is not None else hidden_size
-        self.linear_layer1 = torch.nn.Linear(self.hidden_size, self.output_size)
-        self.linear_layer2 = torch.nn.Linear(self.output_size, self.output_size)
-        self.gelu = torch.nn.GELU()
+        self.embed_size = embed_size
+        self.hidden_size = hidden_size if hidden_size is not None else embed_size
+
+        # Initialize in high precision to prevent xavier init from underflowing
+        self.linear_layer1 = nn.Linear(self.embed_size, self.hidden_size, dtype=torch.float64)
+        self.linear_layer2 = nn.Linear(self.hidden_size, self.embed_size, dtype=torch.float64)
+        self.gelu = nn.GELU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.linear_layer1(x)
-        x = self.gelu(x)
-        x = self.linear_layer2(x)
-        return x
+
+        y = self.linear_layer1(x)
+        y = self.gelu(y)
+        y = self.linear_layer2(y)
+
+        return x+y
 
 class IVLMLP(InternVLChatModel):
     """
@@ -186,7 +189,7 @@ class IVLMLP(InternVLChatModel):
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
         self.mlp_head = MLP(config.llm_config.hidden_size)
-        self.temperature = torch.nn.Parameter(torch.tensor(0.1,
+        self.temperature = nn.Parameter(torch.tensor(0.1,
                                                             requires_grad=True,
                                                             dtype=torch.float32))
         
@@ -238,7 +241,7 @@ class IVLMLPL(InternVLChatModel):
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
         self.mlp_head = MLP(config.llm_config.hidden_size, 4096)
-        self.temperature = torch.nn.Parameter(torch.tensor(0.1,
+        self.temperature = nn.Parameter(torch.tensor(0.1,
                                                             requires_grad=True,
                                                             dtype=torch.float32))
         
@@ -292,7 +295,7 @@ class IVLMLP2(InternVLChatModel):
         super().__init__(config, *args, **kwargs)
         self.mlp_q = MLP(config.llm_config.hidden_size)
         self.mlp_c = MLP(config.llm_config.hidden_size)
-        self.temperature = torch.nn.Parameter(torch.tensor(0.1,
+        self.temperature = nn.Parameter(torch.tensor(0.1,
                                                             requires_grad=True,
                                                             dtype=torch.float32))
         
@@ -345,7 +348,7 @@ class IVLTGS(InternVLChatModel):
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.temperature = torch.nn.Parameter(torch.tensor(0.1,
+        self.temperature = nn.Parameter(torch.tensor(0.1,
                                                             requires_grad=True,
                                                             dtype=torch.float32))
 

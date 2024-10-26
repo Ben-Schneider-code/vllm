@@ -16,9 +16,7 @@
 - **Note** Find best combination of techniques @ 8B param scale.    
 - Try the NVidia version of an adapter (special version of attn where K=V + dense MLP)
 - **RESULTS** all techniques have very similar error, bidirectional *slightly* better than causal. Basically no difference between mean and last token. Unintuitively, averaging negatives across GPUs doesn't help (?). Implementation error?  
-- **PROBLEM** incredible overfitting. As little as 100 steps can essentially halt progress.  
-    - Try mined hard negatives (using CLIP, following Nvidia retriever paper)
-    - No warmup (?), lower lr (?), Cosine lr (?)
+
 ### To Do  
 - **Visualize**
     - Visualize batches of mscoco.

@@ -31,15 +31,14 @@
             "console": "integratedTerminal",
             "args": [
                 "--include",
-                "localhost:0",
+                "localhost:0,1",
                 "--master_port",
                 "44000",
                 "${env:VLLM_REPO}/internvl/train/internvl_chat_finetune.py",
-                "${env:VLLM_REPO}/config/cc128k/cc128k_lt_bi_attn_8B.json"
+                "${env:VLLM_REPO}/config/InternVL-8B-MLP.json"
             ],
             "env": {
-                "PYTHONPATH": "${env:VLLM_REPO}",
-                "WANDB_MODE": "offline"
+                "PYTHONPATH": "${env:VLLM_REPO}"
             }
         },
         {
@@ -136,7 +135,7 @@
             }
         },
         {
-            "name": "Debug DeepSpeed - 4 GPU",
+            "name": "Debug DeepSpeed - MULTIPLE GPU",
             "type": "debugpy",
             "request": "launch",
             "program": "${env:DEEPSPEED}",
@@ -144,9 +143,11 @@
             "console": "integratedTerminal",
             "args": [
                 "--include",
-                "localhost:0,2,3,4",
+                "localhost:0,1",
+                "--master_port",
+                "44000",
                 "${env:VLLM_REPO}/internvl/train/internvl_chat_finetune.py",
-                "${env:VLLM_REPO}/config/pretrain_mlp.json"
+                "${env:VLLM_REPO}/config/debug.json"
             ],
             "env": {
                 "PYTHONPATH": "${env:VLLM_REPO}",

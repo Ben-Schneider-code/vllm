@@ -182,19 +182,19 @@ class ContrastiveTrainer(Trainer):
      def compute_loss(self, model, inputs, return_outputs=False):
 
           loss, outputs = model(inputs, return_outputs=True)
-          self.log_output(dict(outputs, **{"loss": loss}), return_outputs)
+          if not return_outputs: self.log_output(dict(outputs, **{"loss": loss}))
 
           return (loss, outputs) if return_outputs else loss
 
-     def log_output(self, outputs, return_outputs):
+     def log_output(self, outputs):
           
           for k, v in outputs.items():
                if isinstance(v, torch.Tensor):
                     v = v.detach()
-                    dist.all_reduce(v)
+                    dist.all_reduce(v, op=dist.ReduceOp.SUM)
                     v = v / dist.get_world_size()
 
-               if not return_outputs and dist.get_rank() == 0:
+               if dist.get_rank() == 0:
                     self.log_to_wandb(k,v)
 
      def _get_train_sampler(self) -> Optional[torch.utils.data.Sampler]:

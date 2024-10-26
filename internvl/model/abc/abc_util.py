@@ -23,6 +23,9 @@ def compute_gathered_loss(q_emb, c_emb, temperature=1.0, label_smoothing=0.0):
     
     #q_global[rank] = q_emb
     c_global[rank] = c_emb
+    
+    # swap to place candidates in the correct spot 
+    c_global[0], c_global[rank] = c_global[rank], c_global[0]
 
     # Concatenate the gathered embeddings along the batch dimension
     #q_global = torch.cat(q_global, dim=0)

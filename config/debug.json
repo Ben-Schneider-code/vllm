@@ -42,7 +42,7 @@
         "cc",
         "mscoco"
     ],
-    "eval_steps_per_dataset": 5,
+    "eval_steps_per_dataset": 6,
     "evaluation_strategy": "steps",
     "per_device_eval_batch_size": 128,
     "eval_steps": 3,

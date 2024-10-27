@@ -182,7 +182,7 @@ class ContrastiveTrainer(Trainer):
      def compute_loss(self, model, inputs, return_outputs=False):
 
           loss, outputs = model(inputs, return_outputs=True)
-          if not return_outputs: self.log_output(dict(outputs, **{"loss": loss}))
+          if not return_outputs: self.log_output(dict(outputs, **{"batch_loss": loss}))
 
           return (loss, outputs) if return_outputs else loss
 

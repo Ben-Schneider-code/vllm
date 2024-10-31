@@ -135,6 +135,7 @@ class InternVLChatModel(PreTrainedModel):
         self.language_model.enable_input_require_grads()
         self.language_model.print_trainable_parameters()
 
+
     def forward(
             self,
             pixel_values: torch.FloatTensor,

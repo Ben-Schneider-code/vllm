@@ -45,6 +45,6 @@
     "eval_steps_per_dataset": 6,
     "evaluation_strategy": "steps",
     "per_device_eval_batch_size": 128,
-    "eval_steps": 5,
+    "eval_steps": 50,
     "training_dataset_name": "cc"
 }

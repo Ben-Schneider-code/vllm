@@ -152,6 +152,11 @@ class ModelArguments:
         metadata={'help': 'The architecture (model defintion)'}
     )
 
+    use_dora: str = field(
+        default=False,
+        metadata={'help': 'Whether to use dora as the adapter'}
+    )
+
 @dataclass
 class VLMTrainingArguments(TrainingArguments):
     loss_type: Optional[str] = field(
@@ -390,8 +395,10 @@ class LazySupervisedDataset(Dataset):
         # Merge the image path
         image_path = self.get_image_path(data_item['image'])
 
-        # Load the image using tcs_loader if available, otherwise use PIL
+        # Load the image using PIL
         image = self.load_image(image_path)
+
+        # TODO Experiment with random crop (?)
 
         if self.dynamic_image_size:  # If dynamic image size is enabled, preprocess the image dynamically
             images = dynamic_preprocess(image, min_num=self.min_dynamic_patch, max_num=self.max_dynamic_patch,
@@ -1115,11 +1122,17 @@ def main():
         model.language_model.lm_head.requires_grad = True
 
     if model_args.use_backbone_lora:
-        model.wrap_backbone_lora(r=model_args.use_backbone_lora, lora_alpha=2 * model_args.use_backbone_lora, lora_dropout=model_args.lora_dropout)
+        model.wrap_backbone_lora(r=model_args.use_backbone_lora,
+                                lora_alpha=2*model_args.use_backbone_lora,
+                                lora_dropout=model_args.lora_dropout,
+                                use_dora=model_args.use_dora)
         model.config.use_backbone_lora = model_args.use_backbone_lora
 
     if model_args.use_llm_lora:
-        model.wrap_llm_lora(r=model_args.use_llm_lora, lora_alpha=2 * model_args.use_llm_lora, lora_dropout=model_args.lora_dropout)
+        model.wrap_llm_lora(r=model_args.use_llm_lora,
+                            lora_alpha=2*model_args.use_llm_lora,
+                            lora_dropout=model_args.lora_dropout,
+                            use_dora=model_args.use_dora)
         model.config.use_llm_lora = model_args.use_llm_lora
 
     if model_args.freeze_mlp:

@@ -101,17 +101,18 @@ class InternVLChatModel(PreTrainedModel):
         if config.use_llm_lora:
             self.wrap_llm_lora(r=config.use_llm_lora, lora_alpha=2 * config.use_llm_lora)
 
-    def wrap_backbone_lora(self, r=128, lora_alpha=256, lora_dropout=0.05):
+    def wrap_backbone_lora(self, r=128, lora_alpha=256, lora_dropout=0.05, use_dora=False):
         lora_config = LoraConfig(
             r=r,
             target_modules=['attn.qkv', 'attn.proj', 'mlp.fc1', 'mlp.fc2'],
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
+            use_dora=use_dora
         )
         self.vision_model = get_peft_model(self.vision_model, lora_config)
         self.vision_model.print_trainable_parameters()
 
-    def wrap_llm_lora(self, r=128, lora_alpha=256, lora_dropout=0.05):
+    def wrap_llm_lora(self, r=128, lora_alpha=256, lora_dropout=0.05, use_dora=False):
         # Determine the target modules based on the architecture of the language model
         if self.llm_arch_name == 'InternLM2ForCausalLM':
             target_modules = ['attention.wqkv', 'attention.wo', 'feed_forward.w1', 'feed_forward.w2', 'feed_forward.w3']
@@ -127,7 +128,8 @@ class InternVLChatModel(PreTrainedModel):
             target_modules=target_modules,
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
-            task_type='CAUSAL_LM' # Dictattes params are passed to the underlying HG model by the PEFT wrapper.
+            task_type='CAUSAL_LM', # Dictates params are passed to the underlying HG model by the PEFT wrapper.
+            use_dora=use_dora
         )
         self.language_model = get_peft_model(self.language_model, lora_config)
         self.language_model.enable_input_require_grads()

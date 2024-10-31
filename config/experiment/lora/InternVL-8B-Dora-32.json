@@ -1,7 +1,7 @@
 {
     "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-8B",
     "conv_style": "Hermes-2",
-    "output_dir": "/home/b3schnei/output/InternVL-8B-MLP-mscoco",
+    "output_dir": "/home/b3schnei/output/InternVL-8B-Dora-32",
     "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
     "overwrite_output_dir": true,
     "force_image_size": 448,
@@ -11,8 +11,8 @@
     "freeze_llm": true,
     "freeze_mlp": true,
     "freeze_backbone": true,
-    "use_backbone_lora": 16,
-    "use_llm_lora": 16,
+    "use_backbone_lora": 32,
+    "use_llm_lora": 32,
     "vision_select_layer": -1,
     "dataloader_num_workers": 4,
     "bf16": true,
@@ -44,7 +44,8 @@
     ],
     "eval_steps_per_dataset": 6,
     "evaluation_strategy": "steps",
-    "per_device_eval_batch_size": 200,
-    "eval_steps": 20,
-    "training_dataset_name": "mscoco"
+    "per_device_eval_batch_size": 128,
+    "eval_steps": 5,
+    "training_dataset_name": "cc",
+    "use_dora": true
 }

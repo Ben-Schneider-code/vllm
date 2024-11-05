@@ -14,8 +14,8 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import transformers
-from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter
-from dataset_utils.mscoco import MSCOCOAdapter
+from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsAdapterITT
+from dataset_utils.mscoco import MSCOCOAdapter, MSCOCOAdapterITT
 from internvl.dist_utils import init_dist
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
 from internvl.model.internvl_chat import (InternVisionConfig,
@@ -819,6 +819,27 @@ def build_contrastive_dataset(
                 normalize_type=normalize_type,
                 random_seed=0,
             )
+    elif dataset_name == 'cc_itt':
+                dataset = ContrastiveDataset(
+                ConceptualCaptionsAdapterITT(),
+                data_args.conv_style,
+                None,
+                tokenizer,
+                tcs_loader,
+                ds_name="conceptual_captions",
+                num_image_token=model.num_image_token,
+                image_size=data_args.force_image_size,
+                is_train=True,
+                pad2square=data_args.pad2square,
+                group_by_length=group_by_length,
+                dynamic_image_size=dynamic_image_size,
+                use_thumbnail=use_thumbnail,
+                min_dynamic_patch=min_dynamic_patch,
+                max_dynamic_patch=max_dynamic_patch,
+                repeat_time=1,
+                normalize_type=normalize_type,
+                random_seed=0,
+            )
     elif dataset_name == 'cc128k':
         dataset = ContrastiveDataset(
                 CC128kAdapter(),
@@ -861,6 +882,28 @@ def build_contrastive_dataset(
                 normalize_type=normalize_type,
                 random_seed=0,
             )
+    elif dataset_name == 'mscoco_itt':
+                dataset = ContrastiveDataset(
+                MSCOCOAdapterITT(),
+                data_args.conv_style,
+                None,
+                tokenizer,
+                tcs_loader,
+                ds_name="mscoco",
+                num_image_token=model.num_image_token,
+                image_size=data_args.force_image_size,
+                is_train=True,
+                pad2square=data_args.pad2square,
+                group_by_length=group_by_length,
+                dynamic_image_size=dynamic_image_size,
+                use_thumbnail=use_thumbnail,
+                min_dynamic_patch=min_dynamic_patch,
+                max_dynamic_patch=max_dynamic_patch,
+                repeat_time=1,
+                normalize_type=normalize_type,
+                random_seed=0,
+            )
+
     else:
         raise Exception("NotImplementedError")
     

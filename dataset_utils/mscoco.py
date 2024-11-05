@@ -87,6 +87,47 @@ class MSCOCOAdapter(Dataset):
         }
 
         return formatted_item
+    
+class MSCOCOAdapterITT(MSCOCOAdapter):
+        # Currently the modality is image -> text
+    def __getitem__(self, idx):
+        metadata = self.base_ds[idx]
+
+        formatted_item = {
+            "id": metadata["id"],
+            "url": metadata["url"], 
+            "pos_cand": {
+                "id": metadata["text_id"],
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": "Instruction: What kind of image would this caption be used for? Caption: " + metadata["text"] 
+
+                    },
+                    {
+                        "from": "gpt",
+                        "value": ""
+                    }
+                ]
+            },
+            "query": {
+                "id": metadata["image_id"],
+                "image": metadata["image"],
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": "Describe this image in detail."
+                    },
+                    {
+                        "from": "gpt",
+                        "value": ""
+                    }
+                ]
+            }
+        }
+
+        return formatted_item
+    
 
 def CLIP_collate_fn(batch, processor=None):
 

@@ -88,7 +88,7 @@ class MSCOCOAdapter(Dataset):
 
         return formatted_item
     
-class MSCOCOAdapterITT(MSCOCOAdapter):
+class MSCOCONegativeAdapter(MSCOCOAdapter):
         # Currently the modality is image -> text
     def __getitem__(self, idx):
         metadata = self.base_ds[idx]
@@ -101,7 +101,7 @@ class MSCOCOAdapterITT(MSCOCOAdapter):
                 "conversations": [
                     {
                         "from": "human",
-                        "value": "Instruction: What kind of image would this caption be used for? Caption: " + metadata["text"] 
+                        "value": metadata["text"] 
 
                     },
                     {
@@ -116,7 +116,7 @@ class MSCOCOAdapterITT(MSCOCOAdapter):
                 "conversations": [
                     {
                         "from": "human",
-                        "value": "Describe this image in detail."
+                        "value": ""
                     },
                     {
                         "from": "gpt",

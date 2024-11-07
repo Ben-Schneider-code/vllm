@@ -89,7 +89,7 @@ class ConceptualCaptionsAdapter(Dataset):
 
         return formatted_item
 
-class ConceptualCaptionsAdapterITT(ConceptualCaptionsAdapter):
+class ConceptualCaptionsNegativeAdapter(ConceptualCaptionsAdapter):
     
     # Currently the modality is image -> text
     def __getitem__(self, idx):
@@ -104,7 +104,7 @@ class ConceptualCaptionsAdapterITT(ConceptualCaptionsAdapter):
                 "conversations": [
                     {
                         "from": "human",
-                        "value": "Instruction: What kind of image would this caption be used for? Caption: " + metadata["caption"] 
+                        "value": metadata["caption"] 
 
                     },
                     {
@@ -119,7 +119,7 @@ class ConceptualCaptionsAdapterITT(ConceptualCaptionsAdapter):
                 "conversations": [
                     {
                         "from": "human",
-                        "value": "Describe this image in detail."
+                        "value": ""
                     },
                     {
                         "from": "gpt",
@@ -132,6 +132,11 @@ class ConceptualCaptionsAdapterITT(ConceptualCaptionsAdapter):
         return formatted_item
     
 class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
+
+    # TODO Add the full pretraining set
+    def __init__(self):
+        raise Exception("NEED_TO_MAP_TO_NEW_DATA_SET_ERROR")
+        super().__init__()
     
     # Currently the modality is image -> text
     def __getitem__(self, idx):

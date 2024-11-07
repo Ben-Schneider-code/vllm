@@ -14,8 +14,8 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import transformers
-from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsAdapterITT, ConceptualCaptionsPretrainAdapter
-from dataset_utils.mscoco import MSCOCOAdapter, MSCOCOAdapterITT, MSCOCOPretrainAdapter
+from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsNegativeAdapter, ConceptualCaptionsPretrainAdapter
+from dataset_utils.mscoco import MSCOCOAdapter, MSCOCONegativeAdapter, MSCOCOPretrainAdapter
 from internvl.dist_utils import init_dist
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
 from internvl.model.internvl_chat import (InternVisionConfig,
@@ -819,9 +819,9 @@ def build_contrastive_dataset(
                 normalize_type=normalize_type,
                 random_seed=0,
             )
-    elif dataset_name == 'cc_itt':
+    elif dataset_name == 'cc_neg':
                 dataset = ContrastiveDataset(
-                ConceptualCaptionsAdapterITT(),
+                ConceptualCaptionsNegativeAdapter(),
                 data_args.conv_style,
                 None,
                 tokenizer,
@@ -882,9 +882,9 @@ def build_contrastive_dataset(
                 normalize_type=normalize_type,
                 random_seed=0,
             )
-    elif dataset_name == 'mscoco_itt':
+    elif dataset_name == 'mscoco_neg':
                 dataset = ContrastiveDataset(
-                MSCOCOAdapterITT(),
+                MSCOCONegativeAdapter(),
                 data_args.conv_style,
                 None,
                 tokenizer,

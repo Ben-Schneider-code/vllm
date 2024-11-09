@@ -179,7 +179,7 @@ class ContrastiveTrainer(Trainer):
 
           return EvalLoopOutput(predictions=predictions, label_ids=None, metrics=metrics, num_samples=num_samples)
 
-     def compute_loss(self, model, inputs, return_outputs=False):
+     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
 
           loss, outputs = model(inputs, return_outputs=True)
           if not return_outputs: self.log_output(dict(outputs, **{"batch_loss": loss}))

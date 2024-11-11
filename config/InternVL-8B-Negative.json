@@ -11,8 +11,8 @@
     "freeze_llm": true,
     "freeze_mlp": true,
     "freeze_backbone": true,
-    "use_backbone_lora": 16,
-    "use_llm_lora": 16,
+    "use_backbone_lora": 32,
+    "use_llm_lora": 32,
     "vision_select_layer": -1,
     "dataloader_num_workers": 4,
     "bf16": true,
@@ -45,6 +45,6 @@
     "eval_steps_per_dataset": 6,
     "evaluation_strategy": "steps",
     "per_device_eval_batch_size": 200,
-    "eval_steps": 40,
+    "eval_steps": 100,
     "training_dataset_name": "cc_neg"
 }

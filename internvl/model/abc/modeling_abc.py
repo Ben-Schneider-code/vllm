@@ -33,12 +33,14 @@ class MLP(nn.Module):
         return out
 
 class IVLMLPLG(InternVLChatModel):
+    
     """
     Added scaling to the contrastive loss and optimize the scaling param.
     and label smoothing.
     and MLP projection layer.
     """
     
+    supports_gradient_checkpointing = True
     attn_mask = "bidirectional"
 
     def __init__(self, config, *args, **kwargs):

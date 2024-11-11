@@ -14,7 +14,7 @@
                 "--master_port",
                 "44000",
                 "${env:VLLM_REPO}/internvl/train/internvl_chat_finetune.py",
-                "${env:VLLM_REPO}/config/experiment/lora/InternVL-8B-Dora-8.json"
+                "${env:VLLM_REPO}/config/InternVL-8B-MLP.json"
             ],
             "env": {
                 "PYTHONPATH": "${env:VLLM_REPO}",
@@ -38,7 +38,8 @@
                 "${env:VLLM_REPO}/config/InternVL-8B-Low-Memory.json"
             ],
             "env": {
-                "PYTHONPATH": "${env:VLLM_REPO}"
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
             }
         },
         {

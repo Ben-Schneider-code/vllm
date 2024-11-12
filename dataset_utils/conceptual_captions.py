@@ -133,10 +133,11 @@ class ConceptualCaptionsNegativeAdapter(ConceptualCaptionsAdapter):
     
 class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
 
-    # TODO Add the full pretraining set
-    def __init__(self):
-        raise Exception("NEED_TO_MAP_TO_NEW_DATA_SET_ERROR")
-        super().__init__()
+    def __init__(self):      
+        assert "CC_PRETRAIN_ROOT" in os.environ, "Environment variable 'CC_PRETRAIN_ROOT' is not set"
+        self.root = os.environ["CC_PRETRAIN_ROOT"]
+        with open(os.path.join(self.root, "meta.json"), 'rb') as f:
+            self.meta = orjson.loads(f.read())
     
     # Currently the modality is image -> text
     def __getitem__(self, idx):

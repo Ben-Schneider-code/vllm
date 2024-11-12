@@ -10,30 +10,23 @@ def compute_gathered_loss(q_emb, c_emb, temperature=1.0, label_smoothing=0.0):
     q_emb = q_emb.float()
     c_emb = c_emb.float()
 
-    # Get the number of GPUs (world_size)
-    world_size = dist.get_world_size()
-    rank = dist.get_rank()
 
-    # Gather q_embed and c_embed from all GPUs
-    #q_global = [torch.zeros_like(q_emb) for _ in range(world_size)]
-    c_global = [torch.zeros_like(c_emb) for _ in range(world_size)]
+    if dist.is_initialized():
 
-    #dist.all_gather(q_global, q_emb)
-    dist.all_gather(c_global, c_emb)
+        world_size = dist.get_world_size()
+        rank = dist.get_rank()
+        c_global = [torch.zeros_like(c_emb) for _ in range(world_size)]
+        dist.all_gather(c_global, c_emb)
+        c_global[rank] = c_emb
+        c_global[0], c_global[rank] = c_global[rank], c_global[0]
     
-    #q_global[rank] = q_emb
-    c_global[rank] = c_emb
-    
-    # swap to place candidates in the correct spot 
-    c_global[0], c_global[rank] = c_global[rank], c_global[0]
+    else:
+        c_global = [c_emb]
 
-    # Concatenate the gathered embeddings along the batch dimension
-    #q_global = torch.cat(q_global, dim=0)
     c_global = torch.cat(c_global, dim=0)
 
     loss_global, acc_global = compute_contrastive_loss(q_emb, c_global, temperature=temperature, label_smoothing=label_smoothing)
     bs = torch.tensor([c_global.size(0)], device=loss_global.device)
-
     return loss_global, acc_global, bs
 
 def get_mean_token_embed(input_ids, hidden_state, padding_token_id):

@@ -99,6 +99,21 @@
             }
         },
         {
+            "name": "Debug Negative idx",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/pretrain/create_negative_index.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "${env:VLLM_REPO}/config/InternVL-8B-Pretrain.json",
+            ],
+            "env": {
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug Embed_",
             "type": "debugpy",
             "request": "launch",

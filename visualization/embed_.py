@@ -39,7 +39,7 @@ def merge_peft_submodules(module: nn.Module) -> nn.Module:
 def internvl_embed_dataset():
     output_paths = []
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
-    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-2]))
+    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
     assert training_args.deepspeed is None, "Embedding does not support deepspeed"
 
     forward_memory_opt_monkey_patch()

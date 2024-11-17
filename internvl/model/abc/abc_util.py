@@ -5,6 +5,7 @@ import torch.distributed as dist
 def compute_gathered_loss(q_emb, c_emb, temperature=1.0, label_smoothing=0.0):
     """
     Compute the loss by gathering across GPUs.
+    Make sure that the first [batch_size] entries in c_emb conrenspond to the 'correct' embeddings.
     """
 
     q_emb = q_emb.float()

@@ -102,6 +102,10 @@ def contrastive_data_collator(features, pad_id=0):
     query_batch = [item["query_tokenized"] for item in features]
     cand_batch = [item["cand_tokenized"] for item in features]
 
+    if 'negatives_tokenized' in features[0]:
+        negatives_flattened = flatten_negatives(features)
+        cand_batch.extend(negatives_flattened)
+
     # attach metadata to batch
     meta = [{
             "qid" : item["query"]["id"],
@@ -120,3 +124,6 @@ def contrastive_data_collator(features, pad_id=0):
         "pos_cand": cand_batch,
         "meta": meta,
     }
+
+def flatten_negatives(xss):
+    return [x for xs in xss for x in xs["negatives_tokenized"]]

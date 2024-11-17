@@ -1,5 +1,6 @@
 import os
 import orjson 
+import torch
 from torch.utils.data import Dataset
 
 class ConceptualCaptionsAdapter(Dataset):
@@ -133,11 +134,22 @@ class ConceptualCaptionsNegativeAdapter(ConceptualCaptionsAdapter):
     
 class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
 
-    def __init__(self):      
+    def __init__(self, negatives=None):      
         assert "CC_PRETRAIN_ROOT" in os.environ, "Environment variable 'CC_PRETRAIN_ROOT' is not set"
         self.root = os.environ["CC_PRETRAIN_ROOT"]
+
+        self.negatives = negatives
+        if self.negatives is not None:
+            with open(os.path.join(self.root, "negatives.json"), 'rb') as f:
+                self.negative_meta = orjson.loads(f.read())
+
         with open(os.path.join(self.root, "meta.json"), 'rb') as f:
             self.meta = orjson.loads(f.read())
+
+
+    def _attach_negatives(self, idx, item):
+        print(item)
+
     
     # Currently the modality is image -> text
     def __getitem__(self, idx):
@@ -176,6 +188,9 @@ class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
                 ]
             }
         }
+        
+        if self.negatives is not None:
+            self._attach_negatives(idx,formatted_item)
 
         return formatted_item
 

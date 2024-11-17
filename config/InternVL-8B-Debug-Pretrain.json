@@ -1,7 +1,7 @@
 {
     "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-8B",
     "conv_style": "Hermes-2",
-    "output_dir": "/home/b3schnei/output/InternVL-8B-Debug-Negative",
+    "output_dir": "/home/b3schnei/output/InternVL-8B-Pretrain",
     "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
     "overwrite_output_dir": true,
     "force_image_size": 448,
@@ -11,8 +11,8 @@
     "freeze_llm": true,
     "freeze_mlp": true,
     "freeze_backbone": true,
-    "use_backbone_lora": 32,
-    "use_llm_lora": 32,
+    "use_backbone_lora": 16,
+    "use_llm_lora": 16,
     "vision_select_layer": -1,
     "dataloader_num_workers": 4,
     "bf16": true,
@@ -20,7 +20,7 @@
     "per_device_train_batch_size": 128,
     "gradient_accumulation_steps": 1,
     "save_strategy": "steps",
-    "save_steps": 10,
+    "save_steps": 200,
     "save_total_limit": 2,
     "learning_rate": 4e-5,
     "weight_decay": 0.01,
@@ -45,6 +45,7 @@
     "eval_steps_per_dataset": 6,
     "evaluation_strategy": "steps",
     "per_device_eval_batch_size": 200,
-    "eval_steps": 1000,
+    "eval_steps": 20,
+    "negatives": 8,
     "training_dataset_name": "cc_pretrain"
 }

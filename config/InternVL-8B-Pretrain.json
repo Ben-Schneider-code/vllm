@@ -46,5 +46,6 @@
     "evaluation_strategy": "steps",
     "per_device_eval_batch_size": 200,
     "eval_steps": 20,
+    "negatives": 8,
     "training_dataset_name": "cc_pretrain"
 }

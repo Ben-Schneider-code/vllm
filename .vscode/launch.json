@@ -14,7 +14,7 @@
                 "--master_port",
                 "44000",
                 "${env:VLLM_REPO}/internvl/train/internvl_chat_finetune.py",
-                "${env:VLLM_REPO}/config/InternVL-8B-MLP.json"
+                "${env:VLLM_REPO}/config/InternVL-8B-Debug-Pretrain.json"
             ],
             "env": {
                 "PYTHONPATH": "${env:VLLM_REPO}",

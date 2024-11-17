@@ -180,6 +180,15 @@ class DataTrainingArguments:
             )
         },
     )
+
+    negatives: Optional[int] = field(
+        default=None,
+        metadata={
+            'help': 'The number of negatives used for each query'
+            
+        },
+    )
+
     force_image_size: Optional[int] = field(
         default=448,
         metadata={'help': 'Set the desired size for the image. Default is 224.'},
@@ -775,7 +784,8 @@ def build_contrastive_dataset(
     min_dynamic_patch=1,
     max_dynamic_patch=12,
     normalize_type='imagenet',
-    dataset_name = None
+    dataset_name = None,
+    is_train = False,
 ):  
     if dataset_name == 'mbeir':
         dataset =  ContrastiveDataset(
@@ -905,7 +915,7 @@ def build_contrastive_dataset(
             )
     elif dataset_name == "cc_pretrain":
                 dataset = ContrastiveDataset(
-                ConceptualCaptionsPretrainAdapter(),
+                ConceptualCaptionsPretrainAdapter(negatives=data_args.negatives if is_train else None),
                 data_args.conv_style,
                 None,
                 tokenizer,
@@ -926,7 +936,7 @@ def build_contrastive_dataset(
             )
     elif dataset_name == "mscoco_pretrain":
             dataset = ContrastiveDataset(
-            MSCOCOPretrainAdapter(),
+            MSCOCOPretrainAdapter(negatives=data_args.negatives if is_train else None),
             data_args.conv_style,
             None,
             tokenizer,
@@ -1173,7 +1183,8 @@ def main():
     tokenizer,
     tcs_loader,
     model,
-    dataset_name=data_args.training_dataset_name
+    dataset_name=data_args.training_dataset_name,
+    is_train=True
     )  
 
     eval_dataset = build_eval_datasets(
@@ -1269,54 +1280,6 @@ def main():
         trainer.log_metrics('train', metrics)
         trainer.save_metrics('train', metrics)
         trainer.save_state()
-
-def greedy_decode():
-    
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
-    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
-    logger = setup_logger(training_args)
-    model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
-    
-    from torch.utils.data import DataLoader
-    
-    dataset = build_contrastive_dataset(
-    data_args,
-    tokenizer,
-    tcs_loader,
-    model,
-    dataset_name="cc"
-    )
-
-    trainer = ContrastiveTrainer(
-        model=model,
-        args=training_args,
-        train_dataset=dataset,
-        eval_dataset=None,
-        tokenizer=tokenizer,
-        data_collator=contrastive_data_collator
-    )
-
-    model = trainer.model.to("cuda")
-
-    dl = iter(DataLoader(dataset=dataset, batch_size=1, shuffle=False, collate_fn=contrastive_data_collator))
-    item = next(dl)
-    item = trainer._prepare_input(item)
-    item = item['pos_cand']
-    item.pop('labels')
-    im_end_token_id = tokenizer.convert_tokens_to_ids('<|im_end|>')
-    idx = -1
-    for _ in range(400):
-        with torch.autocast(device_type="cuda", dtype=torch.bfloat16), torch.no_grad():
-            out = model(**item)
-            next_token_logits = out['logits'][0,-1,:]
-            idx = torch.argmax(next_token_logits, dim=-1).reshape((1,1))
-            item["input_ids"] = torch.cat((item["input_ids"], idx), dim=-1)
-            if idx == im_end_token_id: break
-
-    out = tokenizer.batch_decode(item["input_ids"])
-    print("\n\n\n")
-    print(out)
-    print("\n\n\n")
 
 if __name__ == '__main__':
     main()

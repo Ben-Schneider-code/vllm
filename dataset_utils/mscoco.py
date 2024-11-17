@@ -129,6 +129,12 @@ class MSCOCONegativeAdapter(MSCOCOAdapter):
         return formatted_item
     
 class MSCOCOPretrainAdapter(MSCOCOAdapter):
+
+    def __init__(self, negatives=None):
+        super().__init__()
+        self.negatives = negatives
+
+
         # Currently the modality is image -> text
     def __getitem__(self, idx):
         metadata = self.base_ds[idx]

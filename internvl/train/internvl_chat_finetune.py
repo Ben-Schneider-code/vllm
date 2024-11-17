@@ -707,6 +707,8 @@ class ContrastiveDataset(LazySupervisedDataset):
         cand = data_item["pos_cand"]
         data_item["query_tokenized"] = self.tokenize_input(query)
         data_item["cand_tokenized"] = self.tokenize_input(cand)
+        if "negatives" in data_item:
+            data_item["negatives_tokenized"] = [self.tokenize_input(n) for n in data_item["negatives"]]
         return data_item
 
 class MBEIRDataset(LazySupervisedDataset):

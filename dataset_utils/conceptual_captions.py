@@ -1,7 +1,7 @@
 import os
 import orjson 
-import torch
 from torch.utils.data import Dataset
+import numpy as np
 
 class ConceptualCaptionsAdapter(Dataset):
     
@@ -137,29 +137,30 @@ class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
     def __init__(self, negatives=None):      
         assert "CC_PRETRAIN_ROOT" in os.environ, "Environment variable 'CC_PRETRAIN_ROOT' is not set"
         self.root = os.environ["CC_PRETRAIN_ROOT"]
-
+        with open(os.path.join(self.root, "meta.json"), 'rb') as f:
+            self.meta = orjson.loads(f.read())
+        
         self.negatives = negatives
         if self.negatives is not None:
             with open(os.path.join(self.root, "negatives.json"), 'rb') as f:
                 self.negative_meta = orjson.loads(f.read())
-
-        with open(os.path.join(self.root, "meta.json"), 'rb') as f:
-            self.meta = orjson.loads(f.read())
+            assert len(self.meta) == len(self.negative_meta)
 
 
     def _attach_negatives(self, idx, item):
-        print(item)
+        
+        offset = 5
+        
+        starts = np.arange(self.negatives) * offset
+        offsets = np.random.randint(0, offset, size=self.negatives)
+        neg_idx = starts + offsets
 
-    
-    # Currently the modality is image -> text
-    def __getitem__(self, idx):
-        metadata = self.meta[idx]
-        image = metadata["image"]
+        negatives_for_idx = self.negative_meta[str(idx)]
+        item["negatives"] = [self._create_candidate(self.meta[negatives_for_idx[i]]) for i in neg_idx]
 
-        formatted_item = {
-            "id": metadata["id"],
-            "url": metadata["url"], 
-            "pos_cand": {
+
+    def _create_candidate(self, metadata):
+        return {
                 "id": metadata["id"],
                 "conversations": [
                     {
@@ -172,7 +173,18 @@ class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
                         "value": ""
                     }
                 ]
-            },
+            }
+
+    
+    # Currently the modality is image -> text
+    def __getitem__(self, idx):
+        metadata = self.meta[idx]
+        image = metadata["image"]
+
+        formatted_item = {
+            "id": metadata["id"],
+            "url": metadata["url"], 
+            "pos_cand": self._create_candidate(metadata),
             "query": {
                 "id": metadata["id"],
                 "image": image,

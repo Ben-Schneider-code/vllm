@@ -1143,9 +1143,10 @@ def setup_logger(training_args):
 
 def main():
 
-    import warnings
-    warnings.warn("This is a branch for experimenting with the relationship between negative samples and stable temperature.\nThis branch is **NOT** for training usable models.")
-    
+    RED = '\033[31m'
+    RESET = '\033[0m'
+    print(f"{RED}Warning:This is a branch for experimenting with the relationship between negative samples and stable temperature.\nThis branch is **NOT** for training usable models.{RESET}")
+        
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
     

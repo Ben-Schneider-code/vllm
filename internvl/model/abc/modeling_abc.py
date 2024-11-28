@@ -72,13 +72,16 @@ class IVLMLPLG(InternVLChatModel):
         c_emb = F.normalize(c_emb, dim=-1)
         
         # eval batch_size is num_gpus * eval_per_gpu
-        loss, acc, bs = compute_gathered_loss(q_emb, c_emb, temperature=self.temperature.float(), label_smoothing=0.1)
+        loss, acc, num_cand = compute_gathered_loss(q_emb, c_emb, temperature=self.temperature.float(), label_smoothing=0.1)
+        
+        print(num_cand)
+        print(acc)
 
         outputs = {}
         if return_outputs:
             outputs["accuracy"] = acc
             outputs["temperature"] = self.temperature.data.clone()
-            outputs["batch_size"] = bs
+            outputs["num_cand"] = num_cand
 
         if return_prediction:
             outputs["prediction"] = {

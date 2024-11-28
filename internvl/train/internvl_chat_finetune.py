@@ -1218,14 +1218,16 @@ def main():
     if model_args.unfreeze_lm_head:
         model.language_model.lm_head.requires_grad = True
 
-    if model_args.use_backbone_lora:
+    has_lora_weights = [key for key in model.state_dict().keys() if 'lora' in key.lower()]
+    if has_lora_weights: print("Has lora weight already, skipping lora init")
+    if model_args.use_backbone_lora and not has_lora_weights:
         model.wrap_backbone_lora(r=model_args.use_backbone_lora,
                                 lora_alpha=2*model_args.use_backbone_lora,
                                 lora_dropout=model_args.lora_dropout,
                                 use_dora=model_args.use_dora)
         model.config.use_backbone_lora = model_args.use_backbone_lora
 
-    if model_args.use_llm_lora:
+    if model_args.use_llm_lora and not has_lora_weights:
         model.wrap_llm_lora(r=model_args.use_llm_lora,
                             lora_alpha=2*model_args.use_llm_lora,
                             lora_dropout=model_args.lora_dropout,

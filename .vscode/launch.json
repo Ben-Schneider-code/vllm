@@ -121,13 +121,13 @@
             "justMyCode": false,
             "console": "integratedTerminal",
             "args": [
-                "${env:VLLM_REPO}/config/embed/InternVL-1B-Optimized-Temperature.json",
+                "${env:VLLM_REPO}/config/embed/InternVL-8B-Pretrain.json",
                 "10"
             ],
             "env": {
                 "PYTHONPATH": "${env:VLLM_REPO}",
                 "WANDB_MODE": "offline",
-                "CUDA_VISIBLE_DEVICES": "0"
+                "CUDA_VISIBLE_DEVICES": "5"
             }
         },
         {

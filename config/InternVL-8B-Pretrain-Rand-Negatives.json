@@ -1,7 +1,7 @@
 {
-    "model_name_or_path": "/home/b3schnei/output/InternVL-8B-Pretrain",
+    "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-8B",
     "conv_style": "Hermes-2",
-    "output_dir": "/home/b3schnei/output/test/InternVL-8B-Pretrain",
+    "output_dir": "/home/b3schnei/output/InternVL-8B-Pretrain-Rand-Negatives",
     "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
     "overwrite_output_dir": true,
     "force_image_size": 448,
@@ -42,10 +42,10 @@
         "cc_pretrain",
         "mscoco_pretrain"
     ],
-    "eval_steps_per_dataset": 8,
+    "eval_steps_per_dataset": 6,
     "evaluation_strategy": "steps",
-    "per_device_eval_batch_size": 250,
-    "eval_steps": 1,
+    "per_device_eval_batch_size": 200,
+    "eval_steps": 100,
     "negatives": 7,
     "training_dataset_name": "cc_pretrain"
 }

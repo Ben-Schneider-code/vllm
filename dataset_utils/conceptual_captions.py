@@ -2,6 +2,7 @@ import os
 import orjson 
 from torch.utils.data import Dataset
 import numpy as np
+import random
 
 class ConceptualCaptionsAdapter(Dataset):
     
@@ -131,7 +132,17 @@ class ConceptualCaptionsNegativeAdapter(ConceptualCaptionsAdapter):
         }
 
         return formatted_item
+
+def sample_n_from_m_exclude_y(n,m,y):
+    sample = set()
     
+    while len(sample) < n:
+        num = random.randint(0, m-1)
+        if num != y:
+            sample.add(num)
+    
+    return list(sample)
+
 class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
 
     def __init__(self, negatives=None):      
@@ -147,16 +158,9 @@ class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
             assert len(self.meta) == len(self.negative_meta)
 
 
-    def _attach_negatives(self, idx, item):
-        
-        offset = 5
-        
-        starts = np.arange(self.negatives) * offset
-        offsets = np.random.randint(0, offset, size=self.negatives)
-        neg_idx = starts + offsets
-
-        negatives_for_idx = self.negative_meta[str(idx)]
-        item["negatives"] = [self._create_candidate(self.meta[negatives_for_idx[i]]) for i in neg_idx]
+    def _attach_randomized_negatives(self, idx, item):        
+        neg_idx = sample_n_from_m_exclude_y(self.negatives, self.__len__(), idx)
+        item["negatives"] = [self._create_candidate(self.meta[i]) for i in neg_idx]
 
 
     def _create_candidate(self, metadata):
@@ -202,7 +206,7 @@ class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
         }
         
         if self.negatives is not None:
-            self._attach_negatives(idx,formatted_item)
+            self._attach_randomized_negatives(idx,formatted_item)
 
         return formatted_item
 

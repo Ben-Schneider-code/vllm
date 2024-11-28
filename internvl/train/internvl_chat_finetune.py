@@ -1142,11 +1142,9 @@ def setup_logger(training_args):
     return logger
 
 def main():
-    # Parse input arguments
-    # See all possible arguments in src/transformers/training_args.py
-    # If use DeepSpeed zero3, init_dist must before HfArgumentParser
-    # launcher = "pytorch"
-    # init_dist(launcher=launcher, backend='nccl')
+
+    import warnings
+    warnings.warn("This is a branch for experimenting with the relationship between negative samples and stable temperature.\nThis branch is **NOT** for training usable models.")
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))

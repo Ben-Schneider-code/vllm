@@ -1112,9 +1112,9 @@ def load_model(model_args, data_args, training_args, logger):
 
 def setup_logger(training_args):
     
-    # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
-    # information sent is the one passed as arguments along with your Python/PyTorch versions.
-    # send_example_telemetry('InternV-Chat', model_args, data_args)
+    RED = '\033[31m'
+    RESET = '\033[0m'
+    print(f"{RED}Warning:This is a branch for experimenting with the relationship between negative samples and **FIXED** temperature.\nThis branch is **NOT** for training usable models.{RESET}")
 
     # Setup logging
     logging.basicConfig(
@@ -1217,6 +1217,8 @@ def main():
 
     if model_args.unfreeze_lm_head:
         model.language_model.lm_head.requires_grad = True
+    
+    model.temperature.requires_grad = False
 
     has_lora_weights = [key for key in model.state_dict().keys() if 'lora' in key.lower()]
     if has_lora_weights: print("Has lora weight already, skipping lora init")

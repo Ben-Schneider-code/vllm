@@ -46,7 +46,7 @@ class IVLMLPLG(InternVLChatModel):
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
         self.mlp_head = MLP(config.llm_config.hidden_size, hidden_size=4096)
-        self.temperature = nn.Parameter(torch.tensor(0.07, requires_grad=True, dtype=torch.float32))
+        self.temperature = nn.Parameter(torch.tensor(0.03, requires_grad=True, dtype=torch.float32))
         
     def forward(self, inputs, return_outputs=False, return_prediction=False):
 

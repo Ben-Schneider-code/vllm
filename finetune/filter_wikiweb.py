@@ -21,13 +21,19 @@ def article_length_arr(data):
 data = filter_for_images(data)
 lens = article_length_arr(data)
 
-import matplotlib.pyplot as plt
 
-# Plot the histogram
-#plt.figure(figsize=(10, 6))
-#lt.hist(lens, bins=30, edgecolor='black', alpha=0.7)
-#plt.title('Histogram of Article Lengths')
-#plt.xlabel('Article Length (characters)')
-#plt.ylabel('Frequency')
-#plt.grid(axis='y', linestyle='--', alpha=0.7)
-#plt.show()
+# Function to filter data for entries where lens is at least 5000
+def filter_by_length(data, lens, threshold=1):
+    return [entry for entry, length in zip(data, lens) if length >= threshold]
+
+# Apply the function
+data = filter_by_length(data, lens, threshold=8000)
+
+# Save the filtered data to a file
+filtered_data_path = "filtered_wikiweb.json"
+
+with open(filtered_data_path, "wb") as output_file:
+    output_file.write(orjson.dumps(data, option=orjson.OPT_INDENT_2))
+
+print(f"Filtered data saved to {filtered_data_path}")
+

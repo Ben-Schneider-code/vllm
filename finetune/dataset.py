@@ -5,13 +5,25 @@ import requests
 from PIL import Image
 from io import BytesIO
 
-class InstructionFiltering(Dataset):
 
+def run_qwen2_vl(question: str, modality: str):
+    assert modality == "image"
+
+    prompt = ("<|im_start|>system\nYou are a helpful AI assistant. Use a professional and concise tone.<|im_end|>\n"
+              "<|im_start|>user\n<|vision_start|><|image_pad|><|vision_end|>"
+              f"{question}<|im_end|>\n"
+              "<|im_start|>assistant\n")
+
+    stop_token_ids = None
+    return  prompt, stop_token_ids
+
+class InstructionFiltering(Dataset):
 
     def __init__(self, prompt) -> None:
         super().__init__()
         self.prompt = prompt
         self.item_idx = []
+        self. modality = "image"
     
         with open(os.environ["FILTERED_WIKIWEB"], "rb") as file:
             self.data = orjson.loads(file.read())
@@ -37,9 +49,20 @@ class InstructionFiltering(Dataset):
             image = Image.open(BytesIO(response.content))
         except Exception as e:
             print(e)
-            image = None
+            return None
 
-        return image, "<image>"+self.prompt+'\n'+data_item["section_text"][section_idx]
+        user_prompt = "Instruction: " + self.prompt+"\nDescription: "+data_item["section_text"][section_idx]
+        prompt_templated, _ = run_qwen2_vl(user_prompt, self.modality)
+
+        return idx, {
+            "prompt": prompt_templated,
+            "multi_modal_data": {
+                self.modality: image
+            },
+        }
+
+    def batch_attach(self, idx, batch):
+        for i in idx: self.attach(i, batch)
 
     def attach(self, idx, item):
         data_idx, image_idx = self.item_idx[idx]
@@ -54,4 +77,13 @@ class InstructionFiltering(Dataset):
     
     def __len__(self):
         return len(self.item_idx)
-    
+
+def qwen_collator(batch):
+
+    # Filter out failed requests
+    batch = list(filter(lambda x: x is not None, batch))
+    # Unpack into two lists
+    ids, data_batch = zip(*batch)
+    ids = list(ids)
+    data_batch = list(data_batch)
+    return ids, data_batch

@@ -120,7 +120,11 @@
             "program": "${env:VLLM_REPO}/finetune/generate_finetuning_data.py",
             "justMyCode": false,
             "console": "integratedTerminal",
-            "args": [],
+            "args": [
+                "0",
+                "10",
+                "~/wiki_instruct"
+            ],
             "env": {
                 "PYTHONPATH": "${env:VLLM_REPO}",
                 "WANDB_MODE": "offline"

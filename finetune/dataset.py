@@ -24,7 +24,7 @@ class InstructionFiltering(Dataset):
         self.prompt = prompt
         self.item_idx = []
         self. modality = "image"
-    
+        assert "FILTERED_WIKIWEB" in os.environ, "Please add a path to your filtered wikiweb dataset"
         with open(os.environ["FILTERED_WIKIWEB"], "rb") as file:
             self.data = orjson.loads(file.read())
 

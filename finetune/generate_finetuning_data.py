@@ -5,7 +5,6 @@
 
 
 import os
-#os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 os.environ["WANDB_PROJECT"] = "WIKIWEB_INFERENCE"
 import sys
 import torch
@@ -14,6 +13,7 @@ from vllm import LLM, SamplingParams
 from finetune.dataset import InstructionFiltering, qwen_collator
 import orjson
 import math
+import time
 
 # CONFIG ---------------
 PROMPT = "Given the image and corresponding desciption, write 3 questions about the image that are answered in the descrption. Provide both the "
@@ -69,10 +69,12 @@ dl = DataLoader(dataset, num_workers=8, collate_fn=qwen_collator, batch_size=BAT
 save_dict= {}
 
 for batch_num, (idx_list, batch) in enumerate(dl):
+    batch_start_time = time.time()  # Track batch runtime
     outputs = llm.generate(batch, sampling_params=sampling_params)
     for idx, out in zip(idx_list,outputs):
         save_dict[str(idx)] = out.outputs[0].text
-    wandb.log({"CURRENT_BATCH": batch_num})
+    batch_end_time = time.time()  # Track batch runtime
+    wandb.log({"CURRENT_BATCH": batch_num, "SECONDS_PER_BATCH": batch_end_time-batch_start_time})
 
 filename = f"{run_name}.json"
 save_data_path = os.path.join(output_dir, filename)

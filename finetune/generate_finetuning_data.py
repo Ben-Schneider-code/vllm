@@ -64,7 +64,7 @@ sampling_params = SamplingParams(
 from torch.utils.data import DataLoader, Subset
 # Subset of indices that are run on this node
 dataset = Subset(full_dataset, range(min_item, max_item))
-dl = DataLoader(dataset, num_workers=8, collate_fn=qwen_collator, batch_size=BATCH_SIZE)
+dl = DataLoader(dataset, num_workers=8, collate_fn=qwen_collator, batch_size=BATCH_SIZE, shuffle=False)
 
 save_dict= {}
 

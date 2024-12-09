@@ -42,7 +42,7 @@ wandb.init(name=run_name, config=log_config)
 
 llm = LLM(
     model=model_name,
-    max_model_len=4096,
+    #max_model_len=4096,
     tensor_parallel_size=torch.cuda.device_count(),
     max_num_seqs=5,
     # Note - mm_processor_kwargs can also be passed to generate/chat calls

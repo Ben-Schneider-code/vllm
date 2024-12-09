@@ -92,7 +92,7 @@ for batch_num, (idx_list, batch) in enumerate(dl):
                 "DATALOADER_YIELD_OVERHEAD": yield_time,
                 "TOTAL_BATCH_TIME": yield_time+(end_of_batch-begin_of_batch),
                 "TOTAL_RUNTIME": time.time() - run_start_time,
-                "SECONDS_PER_ITEM": (time.time() - run_start_time) / (batch_num*BATCH_SIZE)
+                "SECONDS_PER_ITEM": (time.time() - run_start_time) / ((1+batch_num)*BATCH_SIZE)
                 })
 
 filename = f"{run_name}.json"

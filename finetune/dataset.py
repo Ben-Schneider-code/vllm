@@ -57,7 +57,7 @@ class InstructionFiltering(Dataset):
         return idx, {
             "prompt": prompt_templated,
             "multi_modal_data": {
-                self.modality: image
+                self.modality: image.convert("RGB")
             },
         }
 

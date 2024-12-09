@@ -14,6 +14,7 @@ from finetune.dataset import InstructionFiltering, qwen_collator
 import orjson
 import math
 import time
+from tqdm import tqdm
 
 # CONFIG ---------------
 PROMPT = "Given the image and corresponding desciption, write 3 questions about the image that are answered in the descrption. Provide both the "
@@ -64,17 +65,33 @@ sampling_params = SamplingParams(
 from torch.utils.data import DataLoader, Subset
 # Subset of indices that are run on this node
 dataset = Subset(full_dataset, range(min_item, max_item))
-dl = DataLoader(dataset, num_workers=8, collate_fn=qwen_collator, batch_size=BATCH_SIZE, shuffle=False)
+dl = DataLoader(dataset, num_workers=8, collate_fn=qwen_collator, batch_size=BATCH_SIZE, shuffle=False)#, prefetch_factor=4)
 
 save_dict= {}
 
+run_start_time = time.time()
+begin_of_batch = None
+end_of_batch = 0
+yield_time = None
+
 for batch_num, (idx_list, batch) in enumerate(dl):
-    batch_start_time = time.time()  # Track batch runtime
-    outputs = llm.generate(batch, sampling_params=sampling_params)
-    for idx, out in zip(idx_list,outputs):
-        save_dict[str(idx)] = out.outputs[0].text
-    batch_end_time = time.time()  # Track batch runtime
-    wandb.log({"CURRENT_BATCH": batch_num, "SECONDS_PER_BATCH": batch_end_time-batch_start_time})
+
+    begin_of_batch = time.time()
+    yield_time = begin_of_batch - end_of_batch
+
+    try:        
+        outputs = llm.generate(batch, sampling_params=sampling_params)
+        for idx, out in zip(idx_list,outputs):
+            save_dict[str(idx)] = out.outputs[0].text    
+    except Exception as e:
+        print(e)
+
+    end_of_batch = time.time()
+    wandb.log({"CURRENT_BATCH": batch_num,
+                "SECONDS_COMPUTE_BATCH": end_of_batch-begin_of_batch,
+                "DATALOADER_YIELD_OVERHEAD": yield_time,
+                "TOTAL_BATCH_TIME": yield_time+(end_of_batch-begin_of_batch),
+                "TOTAL_RUNTIME": time.time() - run_start_time})
 
 filename = f"{run_name}.json"
 save_data_path = os.path.join(output_dir, filename)

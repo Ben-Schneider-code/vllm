@@ -16,12 +16,12 @@ import math
 import time
 
 # CONFIG ---------------
-PROMPT = "Given the image and corresponding desciption, write 3 questions about the image that are answered in the descrption. Provide both the "
-MAX_TOKENS = 4096
-BATCH_SIZE = 4
+PROMPT = "Given the image and corresponding desciption, write 3 questions about the image that are answered in the descrption. Fill in the following json template with both the questions and their corresponding answer from the description: {Question1: <your question 1 here>, Answer1: <your answer 1 here>, Question2: <your question 2 here>, Answer2: <your answer 2 here>, Question3: <your question 3 here>, Answer3: <your answer 3 here>}"
+MAX_TOKENS = 21_000
+BATCH_SIZE = 32
 TEMPERATURE = 0.0  # For deterministic output, set temperature to 0.
 TOP_P = 1.0
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 min_item, max_item = int(sys.argv[1]), int(sys.argv[2])
 model_name = "Qwen/Qwen2-VL-72B-Instruct"
 modality = "image"
@@ -64,9 +64,9 @@ sampling_params = SamplingParams(
 from torch.utils.data import DataLoader, Subset
 # Subset of indices that are run on this node
 dataset = Subset(full_dataset, range(min_item, max_item))
-dl = DataLoader(dataset, num_workers=8, collate_fn=qwen_collator, batch_size=BATCH_SIZE, shuffle=False)#, prefetch_factor=4)
+dl = DataLoader(dataset, num_workers=8, collate_fn=qwen_collator, batch_size=BATCH_SIZE, shuffle=False, prefetch_factor=4)
 
-save_dict= {}
+save_dict = {}
 
 run_start_time = time.time()
 begin_of_batch = None

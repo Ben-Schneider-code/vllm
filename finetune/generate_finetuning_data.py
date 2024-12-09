@@ -17,9 +17,9 @@ import time
 
 # CONFIG ---------------
 PROMPT = "Using the image and corresponding desciption write 3 questions about the image that are answered in the descrption. Fill in the following json template with both the questions and their corresponding answer from the description: {Question1: <your question 1 here>, Answer1: <your answer 1 here>, Question2: <your question 2 here>, Answer2: <your answer 2 here>, Question3: <your question 3 here>, Answer3: <your answer 3 here>}"
-MAX_TOKENS = 21_000
+MAX_TOKENS = 20_000
 BATCH_SIZE = 32
-TEMPERATURE = 0.0  # For deterministic output, set temperature to 0.
+TEMPERATURE = 0.2  # We want some temperature for lexical diversity
 TOP_P = 1.0
 BATCH_SIZE = 16
 min_item, max_item = int(sys.argv[1]), int(sys.argv[2])

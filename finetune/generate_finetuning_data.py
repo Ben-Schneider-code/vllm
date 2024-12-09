@@ -14,7 +14,6 @@ from finetune.dataset import InstructionFiltering, qwen_collator
 import orjson
 import math
 import time
-from tqdm import tqdm
 
 # CONFIG ---------------
 PROMPT = "Given the image and corresponding desciption, write 3 questions about the image that are answered in the descrption. Provide both the "

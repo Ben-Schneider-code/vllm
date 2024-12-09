@@ -16,7 +16,7 @@ import math
 import time
 
 # CONFIG ---------------
-PROMPT = "Given the image and corresponding desciption, write 3 questions about the image that are answered in the descrption. Fill in the following json template with both the questions and their corresponding answer from the description: {Question1: <your question 1 here>, Answer1: <your answer 1 here>, Question2: <your question 2 here>, Answer2: <your answer 2 here>, Question3: <your question 3 here>, Answer3: <your answer 3 here>}"
+PROMPT = "Using the image and corresponding desciption write 3 questions about the image that are answered in the descrption. Fill in the following json template with both the questions and their corresponding answer from the description: {Question1: <your question 1 here>, Answer1: <your answer 1 here>, Question2: <your question 2 here>, Answer2: <your answer 2 here>, Question3: <your question 3 here>, Answer3: <your answer 3 here>}"
 MAX_TOKENS = 21_000
 BATCH_SIZE = 32
 TEMPERATURE = 0.0  # For deterministic output, set temperature to 0.
@@ -86,11 +86,14 @@ for batch_num, (idx_list, batch) in enumerate(dl):
         print(e)
 
     end_of_batch = time.time()
+    
     wandb.log({"CURRENT_BATCH": batch_num,
                 "SECONDS_COMPUTE_BATCH": end_of_batch-begin_of_batch,
                 "DATALOADER_YIELD_OVERHEAD": yield_time,
                 "TOTAL_BATCH_TIME": yield_time+(end_of_batch-begin_of_batch),
-                "TOTAL_RUNTIME": time.time() - run_start_time})
+                "TOTAL_RUNTIME": time.time() - run_start_time,
+                "SECONDS_PER_ITEM": (time.time() - run_start_time) / (batch_num*BATCH_SIZE)
+                })
 
 filename = f"{run_name}.json"
 save_data_path = os.path.join(output_dir, filename)

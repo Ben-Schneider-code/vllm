@@ -28,8 +28,9 @@ full_dataset= InstructionFiltering(PROMPT)
 output_dir = sys.argv[4]
 run_name = f"instruct_wikiweb_{min_item}_to_{max_item}_of_{len(full_dataset)}"
 # -----------------------
-total_batches = math.ceil((max_item-min_item)/BATCH_SIZE)
+total_batches = math.ceil(num_items_in_range/BATCH_SIZE)
 log_config = {
+    "PROMPT": PROMPT,
     "NUM_ITEMS": num_items_in_range,
     "MIN_IDX": min_item,
     "MAX_IDX": max_item,
@@ -90,15 +91,15 @@ for batch_num, (idx_list,meta, batch) in enumerate(dl):
     end_of_batch = time.time()
     
     total_runtime = time.time() - run_start_time
-    time_remaining_in_hours = (total_batches / (1+batch_num)) * total_runtime
+    seconds_per_item = (time.time() - run_start_time) / ((1+batch_num)*BATCH_SIZE)
 
     wandb.log({"CURRENT_BATCH": batch_num,
                 "SECONDS_COMPUTE_BATCH": end_of_batch-begin_of_batch,
                 "DATALOADER_YIELD_OVERHEAD": yield_time,
                 "TOTAL_BATCH_TIME": yield_time+(end_of_batch-begin_of_batch),
                 "TOTAL_RUNTIME": total_runtime,
-                "SECONDS_PER_ITEM": (time.time() - run_start_time) / ((1+batch_num)*BATCH_SIZE),
-                "TIME_REMAINING_IN_HOURS": time_remaining_in_hours
+                "SECONDS_PER_ITEM": seconds_per_item,
+                "TIME_REMAINING_IN_HOURS": (total_batches-batch_num-1) * BATCH_SIZE * seconds_per_item / 60**2 
                 })
 
 filename = f"{run_name}.json"

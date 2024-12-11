@@ -16,24 +16,24 @@ import math
 import time
 
 # CONFIG ---------------
-PROMPT = "What are 3 interesting thngs about this image that are answered in the description? Fill in the following json template with both the interesting things and their corresponding answer from the description: {Thing 1: <your thing 1 here>, Answer1: <your answer 1 here>, Thing 2: <your thing 2 here>>, Answer2: <your answer 2 here>, Thing 1: <your thing 1 here>, Answer3: <your answer 3 here>}"
+PROMPT = 'Give me 8 prompts a user might ask about this image and the corresponding answers. The prompts should require interpreting the image to answer. Each prompt and its corresponding answer should not have words in common. The prompts and answers should be full sentences. Fill in the following json template with both the prompts and their corresponding answers: {"Prompt 1": <your prompt 1 here>, Answer1: <your answer 1 here>, "Prompt 2": <your prompt 2 here>, Answer2: <your answer 2 here>, "Prompt 3": <your prompt 3 here>, Answer3: <your answer 3 here>, "Prompt 4": <your promp 4 here>, Answer4: <your answer 4 here>, "Prompt 5": <your prompt 5 here>, Answer5: <your answer 5 here>, "Prompt 6": <your query 6 here>, Answer6: <your answer 6 here>, "Prompt 7": <your query 7 here>, Answer7: <your answer 7 here>, "Prompt 8": <your question 8 here>, Answer8: <your answer 8 here>}'
 MAX_TOKENS = 20_000
 TEMPERATURE = 0.2  # We want some temperature for lexical diversity
 TOP_P = 1.0
-BATCH_SIZE = 16
-min_item, max_item = int(sys.argv[1]), int(sys.argv[2])
+BATCH_SIZE = 32
+min_item, max_item, num_items_in_range = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]) 
 model_name = "Qwen/Qwen2-VL-72B-Instruct"
 modality = "image"
 full_dataset= InstructionFiltering(PROMPT)
-output_dir = sys.argv[3]
+output_dir = sys.argv[4]
 run_name = f"instruct_wikiweb_{min_item}_to_{max_item}_of_{len(full_dataset)}"
 # -----------------------
-
+total_batches = math.ceil((max_item-min_item)/BATCH_SIZE)
 log_config = {
-    "NUM_ITEMS": max_item-min_item,
+    "NUM_ITEMS": num_items_in_range,
     "MIN_IDX": min_item,
     "MAX_IDX": max_item,
-    "NUM_BATCHES": math.ceil((max_item-min_item)/BATCH_SIZE)
+    "NUM_BATCHES": total_batches
 }
 
 wandb.init(name=run_name, config=log_config)
@@ -61,8 +61,11 @@ sampling_params = SamplingParams(
 )
 
 from torch.utils.data import DataLoader, Subset
-# Subset of indices that are run on this node
-dataset = Subset(full_dataset, range(min_item, max_item))
+import random
+sample_idx = random.sample(range(min_item, max_item), num_items_in_range)
+
+
+dataset = Subset(full_dataset, sample_idx)
 dl = DataLoader(dataset, num_workers=8, collate_fn=qwen_collator, batch_size=BATCH_SIZE, shuffle=False, prefetch_factor=4)
 
 save_dict = {}
@@ -86,12 +89,16 @@ for batch_num, (idx_list,meta, batch) in enumerate(dl):
 
     end_of_batch = time.time()
     
+    total_runtime = time.time() - run_start_time
+    time_remaining_in_hours = (total_batches / (1+batch_num)) * total_runtime
+
     wandb.log({"CURRENT_BATCH": batch_num,
                 "SECONDS_COMPUTE_BATCH": end_of_batch-begin_of_batch,
                 "DATALOADER_YIELD_OVERHEAD": yield_time,
                 "TOTAL_BATCH_TIME": yield_time+(end_of_batch-begin_of_batch),
-                "TOTAL_RUNTIME": time.time() - run_start_time,
-                "SECONDS_PER_ITEM": (time.time() - run_start_time) / ((1+batch_num)*BATCH_SIZE)
+                "TOTAL_RUNTIME": total_runtime,
+                "SECONDS_PER_ITEM": (time.time() - run_start_time) / ((1+batch_num)*BATCH_SIZE),
+                "TIME_REMAINING_IN_HOURS": time_remaining_in_hours
                 })
 
 filename = f"{run_name}.json"

@@ -17,12 +17,13 @@ import time
 
 # CONFIG ---------------
 #PROMPT = "What are 3 interesting thngs about this image that are answered in the description? Fill in the following json template with both the interesting things and their corresponding answer from the description: {Thing 1: <your thing 1 here>, Answer1: <your answer 1 here>, Thing 2: <your thing 2 here>>, Answer2: <your answer 2 here>, Thing 1: <your thing 1 here>, Answer3: <your answer 3 here>}"
-PROMPT = "Give me 4 questions and answers about this image. The question should require interpreting the image to answer. The question and answer should not have many words in common. Fill in the following json template with both questions and their corresponding answer from the description: {Question 1: <your question 1 here>, Answer1: <your answer 1 here>, Question 2: <your question 2 here>, Answer2: <your answer 2 here>, Question 3: <your question 3 here>, Answer3: <your answer 3 here>, Question 4: <your question 3 here>, Answer4: <your answer 4 here>}"
+PROMPT = 'Give me 8 prompts a user might ask about this image and the corresponding answers. The prompts should require interpreting the image to answer. Each prompt and its corresponding answer should not have words in common. The prompts and answers should be full sentences. Fill in the following json template with both the prompts and their corresponding answers: {"Prompt 1": <your prompt 1 here>, Answer1: <your answer 1 here>, "Prompt 2": <your prompt 2 here>, Answer2: <your answer 2 here>, "Prompt 3": <your prompt 3 here>, Answer3: <your answer 3 here>, "Prompt 4": <your promp 4 here>, Answer4: <your answer 4 here>, "Prompt 5": <your prompt 5 here>, Answer5: <your answer 5 here>, "Prompt 6": <your query 6 here>, Answer6: <your answer 6 here>, "Prompt 7": <your query 7 here>, Answer7: <your answer 7 here>, "Prompt 8": <your question 8 here>, Answer8: <your answer 8 here>}'
+
 
 MAX_TOKENS = 20_000
 TEMPERATURE = 0.2  # We want some temperature for lexical diversity
 TOP_P = 1.0
-BATCH_SIZE = 1
+BATCH_SIZE = 16
 min_item, max_item = int(sys.argv[1]), int(sys.argv[2])
 model_name = "Qwen/Qwen2-VL-72B-Instruct"
 modality = "image"

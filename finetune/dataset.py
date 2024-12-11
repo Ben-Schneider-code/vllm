@@ -9,7 +9,7 @@ from io import BytesIO
 def run_qwen2_vl(question: str, modality: str):
     assert modality == "image"
 
-    prompt = ("<|im_start|>system\nYou are a helpful AI assistant. Use a professional and concise tone.<|im_end|>\n"
+    prompt = ("<|im_start|>system\nYou are a helpful AI assistant.<|im_end|>\n"
               "<|im_start|>user\n<|vision_start|><|image_pad|><|vision_end|>"
               f"{question}<|im_end|>\n"
               "<|im_start|>assistant\n")
@@ -36,7 +36,7 @@ class InstructionFiltering(Dataset):
         data_idx, image_idx = self.item_idx[idx]
         data_item = self.data[data_idx]
         image_url = data_item["section_image_url"][image_idx]
-        section_idx = int(image_idx.split('_', 1)[0])
+        #section_idx = int(image_idx.split('_', 1)[0])
         
         # Define a User-Agent header for Wikimedia requests
         headers = {
@@ -51,10 +51,16 @@ class InstructionFiltering(Dataset):
             print(e)
             return None
 
-        user_prompt = "Instruction: " + self.prompt+"\nDescription: "+data_item["section_text"][section_idx]
+        user_prompt = "Instruction: " + self.prompt
         prompt_templated, _ = run_qwen2_vl(user_prompt, self.modality)
 
-        return idx, {
+        meta = {
+            "article_url": data_item["url"],
+            "image_url": image_url,
+            "section_text": data_item["section_text"]
+        }
+
+        return idx,meta, {
             "prompt": prompt_templated,
             "multi_modal_data": {
                 self.modality: image.convert("RGB")
@@ -83,7 +89,8 @@ def qwen_collator(batch):
     # Filter out failed requests
     batch = list(filter(lambda x: x is not None, batch))
     # Unpack into two lists
-    ids, data_batch = zip(*batch)
+    ids, meta, data_batch = zip(*batch)
+    meta = list(meta)
     ids = list(ids)
     data_batch = list(data_batch)
-    return ids, data_batch
+    return ids, meta, data_batch

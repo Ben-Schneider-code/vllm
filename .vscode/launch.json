@@ -117,17 +117,18 @@
             "name": "Debug vLLM",
             "type": "debugpy",
             "request": "launch",
-            "program": "${env:VLLM_REPO}/finetune/generate_finetuning_data.py",
+            "program": "${env:VLLM_REPO}/finetune/prompt_instruction_eng.py",
             "justMyCode": false,
             "console": "integratedTerminal",
             "args": [
                 "0",
-                "10",
+                "20",
                 "~/wiki_instruct"
             ],
             "env": {
                 "PYTHONPATH": "${env:VLLM_REPO}",
-                "WANDB_MODE": "offline"
+                "WANDB_MODE": "offline",
+                "CUDA_VISIBLE_DEVICES": "0,1,2,3"
             }
         },
         {

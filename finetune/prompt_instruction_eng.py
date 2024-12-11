@@ -16,11 +16,13 @@ import math
 import time
 
 # CONFIG ---------------
-PROMPT = "What are 3 interesting thngs about this image that are answered in the description? Fill in the following json template with both the interesting things and their corresponding answer from the description: {Thing 1: <your thing 1 here>, Answer1: <your answer 1 here>, Thing 2: <your thing 2 here>>, Answer2: <your answer 2 here>, Thing 1: <your thing 1 here>, Answer3: <your answer 3 here>}"
+#PROMPT = "What are 3 interesting thngs about this image that are answered in the description? Fill in the following json template with both the interesting things and their corresponding answer from the description: {Thing 1: <your thing 1 here>, Answer1: <your answer 1 here>, Thing 2: <your thing 2 here>>, Answer2: <your answer 2 here>, Thing 1: <your thing 1 here>, Answer3: <your answer 3 here>}"
+PROMPT = "Give me 4 questions and answers about this image. The question should require interpreting the image to answer. The question and answer should not have many words in common. Fill in the following json template with both questions and their corresponding answer from the description: {Question 1: <your question 1 here>, Answer1: <your answer 1 here>, Question 2: <your question 2 here>, Answer2: <your answer 2 here>, Question 3: <your question 3 here>, Answer3: <your answer 3 here>, Question 4: <your question 3 here>, Answer4: <your answer 4 here>}"
+
 MAX_TOKENS = 20_000
 TEMPERATURE = 0.2  # We want some temperature for lexical diversity
 TOP_P = 1.0
-BATCH_SIZE = 16
+BATCH_SIZE = 1
 min_item, max_item = int(sys.argv[1]), int(sys.argv[2])
 model_name = "Qwen/Qwen2-VL-72B-Instruct"
 modality = "image"
@@ -63,7 +65,7 @@ sampling_params = SamplingParams(
 from torch.utils.data import DataLoader, Subset
 # Subset of indices that are run on this node
 dataset = Subset(full_dataset, range(min_item, max_item))
-dl = DataLoader(dataset, num_workers=8, collate_fn=qwen_collator, batch_size=BATCH_SIZE, shuffle=False, prefetch_factor=4)
+dl = DataLoader(dataset, num_workers=2, collate_fn=qwen_collator, batch_size=BATCH_SIZE, shuffle=False)
 
 save_dict = {}
 
@@ -72,17 +74,26 @@ begin_of_batch = None
 end_of_batch = 0
 yield_time = None
 
-for batch_num, (idx_list,meta, batch) in enumerate(dl):
+for batch_num, (idx_list, meta, batch) in enumerate(dl):
 
     begin_of_batch = time.time()
     yield_time = begin_of_batch - end_of_batch
 
-    try:        
-        outputs = llm.generate(batch, sampling_params=sampling_params)
-        for idx, out in zip(idx_list,outputs):
-            save_dict[str(idx)] = out.outputs[0].text    
-    except Exception as e:
-        print(e)
+    #try:        
+    outputs = llm.generate(batch, sampling_params=sampling_params)
+    for idx, meta, out in zip(idx_list, meta, outputs):
+        with open("output_log.txt", "a", encoding="utf-8") as log_file:
+            log_file.write("----------- Article ------------\n")
+            log_file.write(f"{meta['article_url']}\n")
+            log_file.write("----------- Image -----------\n")
+            log_file.write(f"{meta['image_url']}\n")
+            log_file.write("------- Model Response ------\n")
+            model_text = out.outputs[0].text
+            log_file.write(model_text)
+            log_file.write("\n")  # Add a newline for separation      
+            
+    #except Exception as e:
+    #    print(e)
 
     end_of_batch = time.time()
     
@@ -94,13 +105,5 @@ for batch_num, (idx_list,meta, batch) in enumerate(dl):
                 "SECONDS_PER_ITEM": (time.time() - run_start_time) / ((1+batch_num)*BATCH_SIZE)
                 })
 
-filename = f"{run_name}.json"
-save_data_path = os.path.join(output_dir, filename)
-os.makedirs(os.path.dirname(save_data_path), exist_ok=True)
-with open(save_data_path, "wb") as output_file:
-    output_file.write(orjson.dumps(save_dict, option=orjson.OPT_INDENT_2))
 
-artifact = wandb.Artifact(filename, type="preprocessed-data")
-artifact.add_file(save_data_path)
-wandb.log_artifact(artifact)
 wandb.finish()

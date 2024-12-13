@@ -789,28 +789,8 @@ def build_contrastive_dataset(
     dataset_name = None,
     is_train = False,
 ):  
-    if dataset_name == 'mbeir':
-        dataset =  ContrastiveDataset(
-                MbeirAdapter(data_args=data_args),
-                data_args.conv_style,
-                None,
-                tokenizer,
-                tcs_loader,
-                ds_name="mbeir",
-                num_image_token= model.num_image_token if model is not None else None,
-                image_size=data_args.force_image_size,
-                is_train=True,
-                pad2square=data_args.pad2square,
-                group_by_length=group_by_length,
-                dynamic_image_size=dynamic_image_size,
-                use_thumbnail=use_thumbnail,
-                min_dynamic_patch=min_dynamic_patch,
-                max_dynamic_patch=max_dynamic_patch,
-                repeat_time=1,
-                normalize_type=normalize_type,
-                random_seed=0,
-            )
-    elif dataset_name == 'cc':
+
+    if dataset_name == 'cc':
         dataset = ContrastiveDataset(
                 ConceptualCaptionsAdapter(),
                 data_args.conv_style,

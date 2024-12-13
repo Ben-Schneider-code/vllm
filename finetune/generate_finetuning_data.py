@@ -16,7 +16,14 @@ import math
 import time
 
 # CONFIG ---------------
-PROMPT = 'Give me 8 prompts a user might ask about this image and the corresponding answers. The prompts should require interpreting the image to answer. Each prompt and its corresponding answer should not have words in common. The prompts and answers should be full sentences. Fill in the following json template with both the prompts and their corresponding answers: {"Prompt 1": <your prompt 1 here>, Answer1: <your answer 1 here>, "Prompt 2": <your prompt 2 here>, Answer2: <your answer 2 here>, "Prompt 3": <your prompt 3 here>, Answer3: <your answer 3 here>, "Prompt 4": <your promp 4 here>, Answer4: <your answer 4 here>, "Prompt 5": <your prompt 5 here>, Answer5: <your answer 5 here>, "Prompt 6": <your query 6 here>, Answer6: <your answer 6 here>, "Prompt 7": <your query 7 here>, Answer7: <your answer 7 here>, "Prompt 8": <your question 8 here>, Answer8: <your answer 8 here>}'
+#PROMPT = 'Give me 8 prompts a user might ask about this image and the corresponding answers. The prompts should require interpreting the image to answer. Each prompt and its corresponding answer should not have words in common. The prompts and answers should be full sentences. Fill in the following json template with both the prompts and their corresponding answers: {"Prompt 1": <your prompt 1 here>, Answer1: <your answer 1 here>, "Prompt 2": <your prompt 2 here>, Answer2: <your answer 2 here>, "Prompt 3": <your prompt 3 here>, Answer3: <your answer 3 here>, "Prompt 4": <your promp 4 here>, Answer4: <your answer 4 here>, "Prompt 5": <your prompt 5 here>, Answer5: <your answer 5 here>, "Prompt 6": <your query 6 here>, Answer6: <your answer 6 here>, "Prompt 7": <your query 7 here>, Answer7: <your answer 7 here>, "Prompt 8": <your question 8 here>, Answer8: <your answer 8 here>}'
+
+# Maybe get rid of the full sentences requirement because it makes prompts too repetitive.
+#PROMPT = 'Give me distinct 8 prompts a user might ask about this image and the corresponding answers. The prompts should require interpreting the image to answer. Important: do not repeat the phrasing of the prompt when answering it. Fill in the following json template with both the prompts and their corresponding answers: {"Prompt 1": <your prompt 1 here>, Answer1: <your answer 1 here>, "Prompt 2": <your prompt 2 here>, Answer2: <your answer 2 here>, "Prompt 3": <your prompt 3 here>, Answer3: <your answer 3 here>, "Prompt 4": <your promp 4 here>, Answer4: <your answer 4 here>, "Prompt 5": <your prompt 5 here>, Answer5: <your answer 5 here>, "Prompt 6": <your query 6 here>, Answer6: <your answer 6 here>, "Prompt 7": <your query 7 here>, Answer7: <your answer 7 here>, "Prompt 8": <your question 8 here>, Answer8: <your answer 8 here>}'
+
+# Only ask for 4 (?)
+PROMPT = 'Give me distinct 4 prompts a user might ask about this image and the corresponding answers. The prompts should require interpreting the image to answer. Important: do not repeat the phrasing of the prompt when answering it. Fill in the following json template with both the prompts and their corresponding answers: {"Prompt 1": <your prompt 1 here>, Answer1: <your answer 1 here>, "Prompt 2": <your prompt 2 here>, Answer2: <your answer 2 here>, "Prompt 3": <your prompt 3 here>, Answer3: <your answer 3 here>, "Prompt 4": <your promp 4 here>, Answer4: <your answer 4 here>'
+
 MAX_TOKENS = 20_000
 TEMPERATURE = 0.2  # We want some temperature for lexical diversity
 TOP_P = 1.0
@@ -69,7 +76,7 @@ sample_idx = random.sample(range(min_item, max_item), num_items_in_range)
 dataset = Subset(full_dataset, sample_idx)
 dl = DataLoader(dataset, num_workers=8, collate_fn=qwen_collator, batch_size=BATCH_SIZE, shuffle=False, prefetch_factor=4)
 
-save_dict = {}
+save = []
 
 run_start_time = time.time()
 begin_of_batch = None
@@ -83,8 +90,13 @@ for batch_num, (idx_list,meta, batch) in enumerate(dl):
 
     try:        
         outputs = llm.generate(batch, sampling_params=sampling_params)
-        for idx, out in zip(idx_list,outputs):
-            save_dict[str(idx)] = out.outputs[0].text    
+        for idx,m, out in zip(idx_list,meta,outputs):
+            save.append({
+                "id": idx,
+                "text": out.outputs[0].text,
+                "url": m['image_url'],
+                "article_url": m['article_url']
+            })  
     except Exception as e:
         print(e)
 
@@ -106,7 +118,7 @@ filename = f"{run_name}.json"
 save_data_path = os.path.join(output_dir, filename)
 os.makedirs(os.path.dirname(save_data_path), exist_ok=True)
 with open(save_data_path, "wb") as output_file:
-    output_file.write(orjson.dumps(save_dict, option=orjson.OPT_INDENT_2))
+    output_file.write(orjson.dumps(save, option=orjson.OPT_INDENT_2))
 
 artifact = wandb.Artifact(filename, type="preprocessed-data")
 artifact.add_file(save_data_path)

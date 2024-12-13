@@ -117,12 +117,13 @@
             "name": "Debug vLLM",
             "type": "debugpy",
             "request": "launch",
-            "program": "${env:VLLM_REPO}/finetune/prompt_instruction_eng.py",
+            "program": "${env:VLLM_REPO}/finetune/generate_finetuning_data.py",
             "justMyCode": false,
             "console": "integratedTerminal",
             "args": [
                 "0",
                 "20",
+                "10",
                 "~/wiki_instruct"
             ],
             "env": {

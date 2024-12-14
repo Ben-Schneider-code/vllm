@@ -42,6 +42,7 @@ class IVLMLPLG(InternVLChatModel):
     
     supports_gradient_checkpointing = True
     attn_mask = "bidirectional"
+    instruction_mode = False
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)

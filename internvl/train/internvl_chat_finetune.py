@@ -15,7 +15,7 @@ import torch
 import torch.distributed as dist
 import transformers
 from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsNegativeAdapter, ConceptualCaptionsPretrainAdapter
-from dataset_utils.mscoco import MSCOCOAdapter, MSCOCONegativeAdapter, MSCOCOPretrainAdapter
+from dataset_utils.mscoco import MSCOCOAdapter, MSCOCOInstructAdapter, MSCOCONegativeAdapter, MSCOCOPretrainAdapter
 from dataset_utils.wiki_instruct import WikiInstructAdapter
 from internvl.dist_utils import init_dist
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
@@ -153,6 +153,11 @@ class ModelArguments:
         metadata={'help': 'The architecture (model defintion)'}
     )
 
+    instruction_mode: str = field(
+        default=False,
+        metadata={'help': 'Whether pretraining or instruction finetuning'}
+    )
+
     use_dora: str = field(
         default=False,
         metadata={'help': 'Whether to use dora as the adapter'}
@@ -233,22 +238,6 @@ class DataTrainingArguments:
         default='imagenet',
         metadata={'help': 'The normalize type for the image. Default is imagenet.'},
     )
-    mbeir_root: Optional[str] = field(
-            default='/',
-            metadata={'help': 'The absolute path to your mbeir dataset.'},
-        )
-    mbeir_train_root: Optional[str] = field(
-            default='/',
-            metadata={'help': 'The absolute path to the json file that represents your training instances.'},
-        )
-    mbeir_cand_root: Optional[str] = field(
-            default='/',
-            metadata={'help': 'The absolute path to the json file that represents your candidate pool.'},
-        )
-    mbeir_instruction_root: Optional[str] = field(
-            default='/',
-            metadata={'help': 'The absolute path to the tsv file that contains your query instructions'},
-        )
 
     eval_datasets: Optional[Any] = field(
             default_factory=lambda: [],
@@ -720,70 +709,6 @@ class ContrastiveDataset(LazySupervisedDataset):
         else:
             raise Exception("InvalidTypeError")            
 
-class MBEIRDataset(LazySupervisedDataset):
-    
-    def __init__(
-        self,
-        data_args,
-        template_name,
-        meta,
-        tokenizer,
-        tcs_loader,
-        ds_name,
-        num_image_token,
-        image_size=224,
-        is_train=True,
-        pad2square=False,
-        group_by_length=False,
-        dynamic_image_size=False,
-        use_thumbnail=False,
-        min_dynamic_patch=1,
-        max_dynamic_patch=6,
-        min_num_frame=4,  # for video data
-        max_num_frame=12,  # for video data
-        sampling_method='rand',  # for video data
-        repeat_time=1,
-        normalize_type='imagenet',
-        random_seed=0,
-    ):
-        self.ds_name = ds_name
-        self.tokenizer = tokenizer
-        self.template_name = template_name
-        self.num_image_token = num_image_token
-        self.image_size = image_size
-        self.is_train = is_train
-        self.pad2square = pad2square
-        self.max_num_frame = max_num_frame
-        self.min_num_frame = min_num_frame
-        self.sampling_method = sampling_method
-        self.mbeir_adapter = MbeirAdapter(data_args=data_args)
-        self.root = meta
-        self.cached_data_dict = {}
-        self.tcs_loader = tcs_loader
-        self.group_by_length = group_by_length
-        self.dynamic_image_size = dynamic_image_size
-        self.use_thumbnail = use_thumbnail
-        self.min_dynamic_patch = min_dynamic_patch
-        self.max_dynamic_patch = max_dynamic_patch
-        self.normalize_type = normalize_type
-    
-    def __len__(self):
-        return len(self.mbeir_adapter)
-
-    def tokenize_input(self, item):
-        if "image" in item:
-            return super().multi_modal_get_item(item)
-        else:
-            return super().pure_text_get_item(item)
-
-    def __getitem__(self, i) -> Dict[str, torch.Tensor]:
-        data_item = self.mbeir_adapter[i]
-        query = data_item["query"]
-        cand = data_item["pos_cand"]
-        data_item["query_tokenized"] = self.tokenize_input(query)
-        data_item["cand_tokenized"] = self.tokenize_input(cand)
-        return data_item
-
 def build_contrastive_dataset(
     data_args,
     tokenizer,
@@ -945,7 +870,28 @@ def build_contrastive_dataset(
             repeat_time=1,
             normalize_type=normalize_type,
             random_seed=0,
-        )
+        )       
+    elif dataset_name == "mscoco_instruct":
+        dataset = ContrastiveDataset(
+        MSCOCOInstructAdapter(),
+        data_args.conv_style,
+        None,
+        tokenizer,
+        tcs_loader,
+        ds_name="conceptual_captions",
+        num_image_token= model.num_image_token if model is not None else None,
+        image_size=data_args.force_image_size,
+        is_train=True,
+        pad2square=data_args.pad2square,
+        group_by_length=group_by_length,
+        dynamic_image_size=dynamic_image_size,
+        use_thumbnail=use_thumbnail,
+        min_dynamic_patch=min_dynamic_patch,
+        max_dynamic_patch=max_dynamic_patch,
+        repeat_time=1,
+        normalize_type=normalize_type,
+        random_seed=0,
+    )           
     elif dataset_name == "wiki_instruct":
             dataset = ContrastiveDataset(
             WikiInstructAdapter(),
@@ -953,7 +899,7 @@ def build_contrastive_dataset(
             None,
             tokenizer,
             tcs_loader,
-            ds_name="conceptual_captions",
+            ds_name="wiki_instruct",
             num_image_token= model.num_image_token if model is not None else None,
             image_size=data_args.force_image_size,
             is_train=True,
@@ -1026,7 +972,6 @@ def load_model(model_args, data_args, training_args, logger):
     logger.info(f'Number of added tokens: {num_new_tokens}')
 
     img_context_token_id = tokenizer.convert_tokens_to_ids(IMG_CONTEXT_TOKEN)
-    tcs_loader = None
 
     if model_args.model_name_or_path is not None:
         logger.info('Loading InternVLChatModel...')
@@ -1118,7 +1063,7 @@ def load_model(model_args, data_args, training_args, logger):
     model.vision_model.encoder.gradient_checkpointing = True
     if model_args.grad_checkpoint:
         model.language_model._set_gradient_checkpointing()
-    return model, tokenizer, tcs_loader
+    return model, tokenizer, None
 
 def setup_logger(training_args):
     
@@ -1151,12 +1096,16 @@ def setup_logger(training_args):
     logger.info(f'Training/evaluation parameters {training_args}')
     return logger
 
+def init_instruction_finetuning(model):
+    from peft import PeftModel
+    assert isinstance(model.language_model, PeftModel), "Language model is not wrapped with adaptor, has this model been pretrained?"
+    assert isinstance(model.vision_model, PeftModel), "Vision model is not wrapped with adaptor, has this model been pretrained?"
+    model.language_model = model.language_model.merge_and_unload()
+    model.vision_model = model.vision_model.merge_and_unload()
+    print("Merged pretraining weights into model")
+    return model
+
 def main():
-    # Parse input arguments
-    # See all possible arguments in src/transformers/training_args.py
-    # If use DeepSpeed zero3, init_dist must before HfArgumentParser
-    # launcher = "pytorch"
-    # init_dist(launcher=launcher, backend='nccl')
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
@@ -1189,6 +1138,10 @@ def main():
     set_seed(training_args.seed)
 
     model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
+
+    # if we are doing instruction finetuning fuse the LoRA weights and init new ones
+    if model_args.instruction_mode:
+        model = init_instruction_finetuning(model)
 
     train_dataset = build_contrastive_dataset(
     data_args,

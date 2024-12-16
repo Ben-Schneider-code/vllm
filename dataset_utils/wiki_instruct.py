@@ -104,12 +104,3 @@ class WikiInstructAdapter(Dataset):
 
         return ret
     
-
-def main():
-    print("hello")
-    ds = WikiInstructAdapter()
-    item = ds[10]
-    print("end")
-
-if __name__ == "__main__":
-    main()

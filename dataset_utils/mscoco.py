@@ -173,7 +173,52 @@ class MSCOCOPretrainAdapter(MSCOCOAdapter):
         }
 
         return formatted_item
-    
+
+class MSCOCOInstructAdapter(MSCOCOPretrainAdapter):
+
+    instruction_template = "What is a caption that fits this image?"
+
+    def __init__(self):
+        super().__init__()
+
+        # Currently the modality is image -> text
+    def __getitem__(self, idx):
+        metadata = self.base_ds[idx]
+
+        formatted_item = {
+            "id": metadata["id"],
+            "url": metadata["url"], 
+            "pos_cand": {
+                "id": metadata["text_id"],
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": metadata["text"] 
+
+                    },
+                    {
+                        "from": "gpt",
+                        "value": ""
+                    }
+                ]
+            },
+            "query": {
+                "id": metadata["image_id"],
+                "image": metadata["image"],
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": f"Instruction: {self.instruction_template}"
+                    },
+                    {
+                        "from": "gpt",
+                        "value": ""
+                    }
+                ]
+            }
+        }
+
+        return formatted_item
 
 def CLIP_collate_fn(batch, processor=None):
 

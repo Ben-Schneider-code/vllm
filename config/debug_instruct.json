@@ -47,6 +47,6 @@
     "eval_steps_per_dataset": 6,
     "evaluation_strategy": "steps",
     "per_device_eval_batch_size": 200,
-    "eval_steps": 100,
+    "eval_steps": 20,
     "training_dataset_name": "wiki_instruct"
 }

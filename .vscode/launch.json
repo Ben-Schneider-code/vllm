@@ -18,7 +18,6 @@
             ],
             "env": {
                 "PYTHONPATH": "${env:VLLM_REPO}",
-                "WANDB_MODE": "offline"
             }
         },
         {

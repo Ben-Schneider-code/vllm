@@ -98,6 +98,10 @@ def concat_pad_data_collator(features, pad_id=0):
     return batch
 
 def contrastive_data_collator(features, pad_id=0):
+
+    # flatten list of lists
+    if isinstance(features[0], list):
+        features = [item for sublist in features for item in sublist]
     
     query_batch = [item["query_tokenized"] for item in features]
     cand_batch = [item["cand_tokenized"] for item in features]

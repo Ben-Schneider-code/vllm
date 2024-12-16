@@ -133,6 +133,20 @@
             }
         },
         {
+            "name": "Debug Wiki",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/dataset_utils/wiki_instruct.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [],
+            "env": {
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline",
+                "CUDA_VISIBLE_DEVICES": "0,1,2,3"
+            }
+        },
+        {
             "name": "Debug Embed_",
             "type": "debugpy",
             "request": "launch",

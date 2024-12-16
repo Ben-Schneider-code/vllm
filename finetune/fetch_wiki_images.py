@@ -36,7 +36,7 @@ def process_item(item):
     fetch_item(item["id"], item["url"])
 
 # Use ThreadPoolExecutor for parallelization
-with ThreadPoolExecutor(max_workers=16) as executor:  # Adjust max_workers as needed
+with ThreadPoolExecutor(max_workers=32) as executor:  # Adjust max_workers as needed
     futures = {executor.submit(process_item, item): item for item in meta}
 
     for future in tqdm(as_completed(futures), total=len(futures)):

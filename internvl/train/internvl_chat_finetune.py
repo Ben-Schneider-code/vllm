@@ -16,6 +16,7 @@ import torch.distributed as dist
 import transformers
 from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsNegativeAdapter, ConceptualCaptionsPretrainAdapter
 from dataset_utils.mscoco import MSCOCOAdapter, MSCOCONegativeAdapter, MSCOCOPretrainAdapter
+from dataset_utils.wiki_instruct import WikiInstructAdapter
 from internvl.dist_utils import init_dist
 from internvl.model.internlm2.modeling_internlm2 import InternLM2ForCausalLM
 from internvl.model.internvl_chat import (InternVisionConfig,
@@ -701,8 +702,7 @@ class ContrastiveDataset(LazySupervisedDataset):
         else:
             return super().pure_text_get_item(item)
 
-    def __getitem__(self, i) -> Dict[str, torch.Tensor]:
-        data_item = self.adapter[i]
+    def process_input(self, data_item):
         query = data_item["query"]
         cand = data_item["pos_cand"]
         data_item["query_tokenized"] = self.tokenize_input(query)
@@ -710,6 +710,15 @@ class ContrastiveDataset(LazySupervisedDataset):
         if "negatives" in data_item:
             data_item["negatives_tokenized"] = [self.tokenize_input(n) for n in data_item["negatives"]]
         return data_item
+
+    def __getitem__(self, i) -> Dict[str, torch.Tensor]:
+        data_item = self.adapter[i]
+        if isinstance(data_item, dict):
+            return self.process_input(data_item)
+        elif isinstance(data_item, list):
+            return [self.process_input(item) for item in data_item]
+        else:
+            raise Exception("InvalidTypeError")            
 
 class MBEIRDataset(LazySupervisedDataset):
     
@@ -919,6 +928,27 @@ def build_contrastive_dataset(
     elif dataset_name == "mscoco_pretrain":
             dataset = ContrastiveDataset(
             MSCOCOPretrainAdapter(negatives=data_args.negatives if is_train else None),
+            data_args.conv_style,
+            None,
+            tokenizer,
+            tcs_loader,
+            ds_name="conceptual_captions",
+            num_image_token= model.num_image_token if model is not None else None,
+            image_size=data_args.force_image_size,
+            is_train=True,
+            pad2square=data_args.pad2square,
+            group_by_length=group_by_length,
+            dynamic_image_size=dynamic_image_size,
+            use_thumbnail=use_thumbnail,
+            min_dynamic_patch=min_dynamic_patch,
+            max_dynamic_patch=max_dynamic_patch,
+            repeat_time=1,
+            normalize_type=normalize_type,
+            random_seed=0,
+        )
+    elif dataset_name == "wiki_instruct":
+            dataset = ContrastiveDataset(
+            WikiInstructAdapter(),
             data_args.conv_style,
             None,
             tokenizer,

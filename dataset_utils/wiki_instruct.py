@@ -47,9 +47,8 @@ class WikiInstructAdapter(Dataset):
         self.root = os.environ["WIKI_INSTRUCT_ROOT"]
         with open(self.root, 'rb') as f:
             self.meta = orjson.loads(f.read())
-        self.meta = list(filter(lambda x: "parsed_text" in x, self.meta))
+        self.meta = list(filter(lambda x: ("parsed_text" in x) and os.path.exists(get_image_path(self.root, x["id"])), self.meta))
         
-
     def __len__(self):
         return len(self.meta)
 
@@ -64,7 +63,8 @@ class WikiInstructAdapter(Dataset):
                 "conversations": [
                     {
                         "from": "human",
-                        "value": f"Instruction: {instruction}"
+                        "value": "",
+                        #"value": f"Instruction: {instruction}"
                     },
                     {
                         "from": "gpt",
@@ -91,7 +91,8 @@ class WikiInstructAdapter(Dataset):
     def __getitem__(self, idx):
         meta = self.meta[idx]
         url = meta["url"]
-        image = os.path.join(os.path.dirname(self.root), "images", f"{meta["id"]}.jpeg")
+        #image = os.path.join(os.path.dirname(self.root), "images", f"{meta["id"]}.jpeg")
+        image = get_image_path(self.root, meta["id"])
         assert os.path.exists(image), f"Could not locate image, looked in {image}"
         parsed_text = meta["parsed_text"]
 
@@ -103,4 +104,6 @@ class WikiInstructAdapter(Dataset):
             ret.append(self._get_formatted_item(idx, url, image, prompt, answer))
 
         return ret
-    
+
+def get_image_path(root, image_id):
+    os.path.join(os.path.dirname(root), "images", f"{image_id}.jpeg")

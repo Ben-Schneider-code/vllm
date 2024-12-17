@@ -17,11 +17,11 @@
     "dataloader_num_workers": 8,
     "bf16": true,
     "num_train_epochs": 1,
-    "per_device_train_batch_size": 8,
+    "per_device_train_batch_size": 48,
     "gradient_accumulation_steps": 1,
     "save_strategy": "steps",
-    "save_steps": 1000,
-    "save_total_limit": 5,
+    "save_steps": 250,
+    "save_total_limit": 4,
     "learning_rate": 4e-5,
     "weight_decay": 0.01,
     "warmup_ratio": 0.03,
@@ -47,6 +47,6 @@
     "eval_steps_per_dataset": 6,
     "evaluation_strategy": "steps",
     "per_device_eval_batch_size": 200,
-    "eval_steps": 20,
+    "eval_steps": 25,
     "training_dataset_name": "wiki_instruct"
 }

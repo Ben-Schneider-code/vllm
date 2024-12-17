@@ -106,4 +106,4 @@ class WikiInstructAdapter(Dataset):
         return ret
 
 def get_image_path(root, image_id):
-    os.path.join(os.path.dirname(root), "images", f"{image_id}.jpeg")
+    return os.path.join(os.path.dirname(root), "images", f"{image_id}.jpeg")

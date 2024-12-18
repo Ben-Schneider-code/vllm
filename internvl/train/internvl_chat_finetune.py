@@ -37,8 +37,6 @@ from internvl.train.dataset import (build_transform,
                                     preprocess_internlm, preprocess_mpt,
                                     preprocess_phi3)
 
-from internvl.train.mbeir_dataset import MbeirAdapter
-#internvl/model/abc/modeling_abc.py
 from internvl.model.abc.modeling_abc import MODEL_ARCHITECTURE
 from internvl.train.trainer_monkey_patch import replace_create_optimizer
 from PIL import Image, ImageFile, PngImagePlugin, UnidentifiedImageError
@@ -1250,4 +1248,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    #greedy_decode()

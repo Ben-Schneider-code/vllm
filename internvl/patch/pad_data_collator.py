@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from torch.nn.utils.rnn import pad_sequence
 
 IGNORE_INDEX = -100
 
@@ -80,7 +81,7 @@ def concat_pad_data_collator(features, pad_id=0):
     # Handling of all other possible keys.
     # Again, we will use the first element to figure out which key/values are not None for this model.
     for k, v in first.items():
-        if k not in ('label', 'label_ids', 'pixel_values', 'image_flags') and \
+        if k not in ('label', 'label_ids', 'pixel_values', 'image_flags', 'instruction_mask') and \
                 v is not None and not isinstance(v, str):
             if isinstance(v, torch.Tensor):
                 batch[k] = torch.stack([f[k] for f in features])
@@ -95,6 +96,9 @@ def concat_pad_data_collator(features, pad_id=0):
                 batch[k] = torch.concat(np.stack([f[k] for f in features]))
             else:
                 batch[k] = torch.concat([f[k] for f in features])
+        if k in ('instruction_mask'):
+            batch[k] = pad_sequence([f[k] for f in features], batch_first=True, padding_value=1)
+
     return batch
 
 def contrastive_data_collator(features, pad_id=0):

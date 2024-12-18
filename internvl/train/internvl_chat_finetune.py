@@ -354,12 +354,15 @@ class LazySupervisedDataset(Dataset):
         # Select the appropriate preprocessing function based on the template name
         if self.template_name == 'Hermes-2':
             preprocess_function = preprocess_mpt
-        elif self.template_name == 'internlm2-chat':
-            preprocess_function = preprocess_internlm
-        elif self.template_name == 'phi3-chat':
-            preprocess_function = preprocess_phi3
         else:
-            preprocess_function = preprocess
+            raise Exception("TemplateNotImplementedError")
+        # elif self.template_name == 'internlm2-chat':
+        #     preprocess_function = preprocess_internlm
+        # elif self.template_name == 'phi3-chat':
+        #     preprocess_function = preprocess_phi3
+        # else:
+        #     preprocess_function = preprocess
+        
         return preprocess_function
 
     def load_image(self, image_path):
@@ -423,6 +426,7 @@ class LazySupervisedDataset(Dataset):
         # Create the final return dictionary
         ret = dict(
             input_ids=ret['input_ids'][0],
+            instruction_mask=ret['instruction_mask'],
             labels=ret['labels'][0],
             attention_mask=ret['attention_mask'][0],
             pixel_values=pixel_values,
@@ -466,6 +470,7 @@ class LazySupervisedDataset(Dataset):
         # Create the final return dictionary
         ret = dict(
             input_ids=ret['input_ids'][0],
+            instruction_mask=ret['instruction_mask'],
             labels=ret['labels'][0],
             attention_mask=ret['attention_mask'][0],
             pixel_values=pixel_values,
@@ -517,6 +522,7 @@ class LazySupervisedDataset(Dataset):
         # Create the final return dictionary
         ret = dict(
             input_ids=ret['input_ids'][0],
+            instruction_mask=ret['instruction_mask'],
             labels=ret['labels'][0],
             attention_mask=ret['attention_mask'][0],
             pixel_values=pixel_values,
@@ -1100,6 +1106,7 @@ def init_instruction_finetuning(model):
     assert isinstance(model.vision_model, PeftModel), "Vision model is not wrapped with adaptor, has this model been pretrained?"
     model.language_model = model.language_model.merge_and_unload()
     model.vision_model = model.vision_model.merge_and_unload()
+    model.instruction_mode=True
     print("Merged pretraining weights into model")
     return model
 

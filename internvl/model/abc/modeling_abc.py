@@ -53,6 +53,7 @@ class IVLMLPLG(InternVLChatModel):
 
         query = inputs["query"]
         candidate = inputs["pos_cand"]
+        instruction_mask = query.pop("instruction_mask", None)
         query.pop("labels")
         candidate.pop("labels")
 
@@ -64,7 +65,7 @@ class IVLMLPLG(InternVLChatModel):
         assert(query_outputs.logits is None)
         assert(candidate_outputs.logits is None)
 
-        q_eos_token_emb = get_mean_token_embed(query["input_ids"], query_outputs.hidden_states[-1], 0)
+        q_eos_token_emb = get_mean_token_embed(query["input_ids"], query_outputs.hidden_states[-1], 0, instruction_mask=instruction_mask)
         c_eos_token_emb= get_mean_token_embed(candidate["input_ids"], candidate_outputs.hidden_states[-1], 0)
         
         q_emb = self.mlp_head(q_eos_token_emb).float()

@@ -421,15 +421,38 @@ def preprocess_mpt(
             new_conversations.append(conversation)
         conversations = new_conversations
 
-    # Tokenize conversations
-    input_ids = tokenizer(
-        conversations,
-        return_tensors='pt',
-        # Change to never pad to full length.
-        padding=False, # if group_by_length or use_packed_ds else 'max_length',
-        max_length=tokenizer.model_max_length,
-        truncation=True,
-    ).input_ids
+    instruction_mask = None
+    input_ids = None
+    if "Instruction:" in conversations[0]:
+        conversations[0] = conversations[0].replace("Instruction:", "<|action_start|>Instruction:")
+        tokenized = tokenizer(
+            conversations,
+            return_tensors='pt',
+            # Change to never pad to full length.
+            padding=False, # if group_by_length or use_packed_ds else 'max_length',
+            max_length=tokenizer.model_max_length,
+            truncation=True,
+        )
+
+        tok = tokenized.input_ids[0,:]
+        instruction_start = torch.argwhere(tok==92541).squeeze(dim=0).item()
+        instruction_end = torch.argwhere(tok==92542)[-1].item()
+        tok = tok[tok != 92541] # filter placeholder token
+        assert instruction_end > instruction_start
+        instruction_mask = torch.ones_like(tok)
+        instruction_mask[instruction_start:instruction_end-1]=0
+        input_ids = tok.unsqueeze(dim=0)
+    else:
+        input_ids = tokenizer(
+            conversations,
+            return_tensors='pt',
+            # Change to never pad to full length.
+            padding=False, # if group_by_length or use_packed_ds else 'max_length',
+            max_length=tokenizer.model_max_length,
+            truncation=True,
+        ).input_ids
+        targets = input_ids.clone()
+
     targets = input_ids.clone()
 
     # Mask targets. Only compute loss on the assistant outputs.
@@ -475,6 +498,7 @@ def preprocess_mpt(
         input_ids=input_ids,
         labels=targets,
         attention_mask=input_ids.ne(tokenizer.pad_token_id),
+        instruction_mask=instruction_mask
     )
 
 

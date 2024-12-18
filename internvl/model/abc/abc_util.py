@@ -30,11 +30,15 @@ def compute_gathered_loss(q_emb, c_emb, temperature=1.0, label_smoothing=0.0):
     num_cand = torch.tensor([c_global.size(0)], device=loss_global.device)
     return loss_global, acc_global, num_cand
 
-def get_mean_token_embed(input_ids, hidden_state, padding_token_id):
-     mask = (input_ids != padding_token_id).unsqueeze(-1)
-     masked_states = mask*hidden_state
-     mean_token_emb = torch.mean(masked_states,dim=1) # Average
-     return mean_token_emb
+def get_mean_token_embed(input_ids, hidden_state, padding_token_id, instruction_mask=None):
+     
+    if instruction_mask is not None: # apply instruction mask
+       hidden_state = instruction_mask.unsqueeze(-1)*hidden_state
+
+    mask = (input_ids != padding_token_id).unsqueeze(-1)
+    masked_states = mask*hidden_state
+    mean_token_emb = torch.mean(masked_states,dim=1) # Average
+    return mean_token_emb
 
 def compute_contrastive_loss(q_embeds, p_embeds, temperature=1.0, label_smoothing=0.0):
 

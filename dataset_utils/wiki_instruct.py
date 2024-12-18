@@ -63,8 +63,7 @@ class WikiInstructAdapter(Dataset):
                 "conversations": [
                     {
                         "from": "human",
-                        "value": "",
-                        #"value": f"Instruction: {instruction}"
+                        "value": f"Instruction: {instruction}"
                     },
                     {
                         "from": "gpt",

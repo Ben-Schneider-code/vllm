@@ -50,6 +50,7 @@ def pad_data_collator(features, pad_id=0):
 def concat_pad_data_collator(features, pad_id=0):
 
     first = features[0]
+    has_instruction
     batch = {}
 
     batch_lens = [feat['input_ids'].shape for feat in features]
@@ -96,7 +97,7 @@ def concat_pad_data_collator(features, pad_id=0):
                 batch[k] = torch.concat(np.stack([f[k] for f in features]))
             else:
                 batch[k] = torch.concat([f[k] for f in features])
-        if k in ('instruction_mask'):
+        if k in ('instruction_mask') and first[k] is not None:
             batch[k] = pad_sequence([f[k] for f in features], batch_first=True, padding_value=1)
 
     return batch

@@ -50,7 +50,6 @@ def pad_data_collator(features, pad_id=0):
 def concat_pad_data_collator(features, pad_id=0):
 
     first = features[0]
-    has_instruction
     batch = {}
 
     batch_lens = [feat['input_ids'].shape for feat in features]

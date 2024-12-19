@@ -3,7 +3,7 @@ from transformers import HfArgumentParser
 from transformers.trainer_utils import PredictionOutput
 from internvl.model.abc.modeling_abc import MODEL_ARCHITECTURE
 from internvl.patch.pad_data_collator import contrastive_data_collator
-from internvl.train.contrastive_trainer import ContrastiveTrainer
+from util.contrastive_trainer import ContrastiveTrainer
 from internvl.train.internvl_chat_finetune import VLMTrainingArguments, DataTrainingArguments, ModelArguments, build_contrastive_dataset, build_eval_datasets, load_model, setup_logger
 import os
 import sys

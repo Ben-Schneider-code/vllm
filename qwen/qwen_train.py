@@ -1,63 +1,54 @@
+import torch
+import torch.distributed as dist
+import logging
+import os
+from transformers import set_seed, HfArgumentParser
+from util.dataclass import ModelArguments, DataTrainingArguments, VLMTrainingArguments
+from qwen.qwen2_vl.modeling_qwen2_vl import Qwen2VLModel
+from qwen.qwen2_vl.processing_qwen2_vl import Qwen2VLProcessor
 
+logger = logging.getLogger(__name__)
+os.environ['TOKENIZERS_PARALLELISM'] = 'true'
+
+
+def load_model(model_args: ModelArguments, data_args: DataTrainingArguments, training_args: VLMTrainingArguments):
+
+    
+    processor = Qwen2VLProcessor.from_pretrained(model_args.model_name_or_path)
+    model = Qwen2VLModel.from_pretrained(
+        model_args.model_name_or_path,
+        torch_dtype=torch.bfloat16,
+        attn_implementation="flash_attention_2",
+    )
+
+    return model, processor
+
+def build_contrastive_dataset():
+    return None
+
+def build_eval_datasets():
+    return None
+
+def init_instruction_finetuning():
+    return None
 
 def main():
     
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
-    
-    #forward_memory_opt_monkey_patch()
-    
-    # if MODEL_ARCHITECTURE[model_args.model_architecture].attn_mask == 'bidirectional':
-    #     unmask_attn_monkey_patch()
-    # elif MODEL_ARCHITECTURE[model_args.model_architecture].attn_mask != 'casual':
-    #     raise Exception("NotImplementedError")
-    
-    # Detecting last checkpoint and eventually continue from last checkpoint.
-    last_checkpoint = None
-    if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
-        last_checkpoint = get_last_checkpoint(training_args.output_dir)
-        if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
-            raise ValueError(
-                f'Output directory ({training_args.output_dir}) already exists and is not empty. '
-                'Use --overwrite_output_dir to overcome.'
-            )
-        elif last_checkpoint is not None and training_args.resume_from_checkpoint is None:
-            logger.info(
-                f'Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change '
-                'the `--output_dir` or add `--overwrite_output_dir` to train from scratch.'
-            )
             
     # Set seed before initializing model.
     set_seed(training_args.seed)
 
-    model, tokenizer, tcs_loader = load_model(model_args, data_args, training_args, logger)
+    model, tokenizer = load_model(model_args, data_args, training_args)
 
     # if we are doing instruction finetuning fuse the LoRA weights and init new ones
     if model_args.instruction_mode:
         model = init_instruction_finetuning(model)
 
-    train_dataset = build_contrastive_dataset(
-    data_args,
-    tokenizer,
-    tcs_loader,
-    model,
-    dataset_name=data_args.training_dataset_name,
-    is_train=True
-    )  
+    train_dataset = build_contrastive_dataset()  
 
-    eval_dataset = build_eval_datasets(
-    training_args.per_device_eval_batch_size,
-    data_args,
-    tokenizer,
-    tcs_loader,
-    model,
-    group_by_length=False,
-    dynamic_image_size=False,
-    use_thumbnail=False,
-    min_dynamic_patch=1,
-    max_dynamic_patch=12,
-    normalize_type='imagenet',
-    )
+    eval_dataset = build_eval_datasets()
 
     def _freeze_params(module):
         for param in module.parameters():
@@ -108,38 +99,34 @@ def main():
     # set seed for torch dataloaders
     set_seed(training_args.seed)
 
-    # Initialize our Trainer
-    if model_args.use_custom_trainer:
-        replace_create_optimizer()
+    # trainer = ContrastiveTrainer(
+    #     model=model,
+    #     args=training_args,
+    #     train_dataset=train_dataset if training_args.do_train else None,
+    #     eval_dataset=eval_dataset,
+    #     tokenizer=tokenizer,
+    #     data_collator=contrastive_data_collator
+    # )
 
-    trainer = ContrastiveTrainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_dataset if training_args.do_train else None,
-        eval_dataset=eval_dataset,
-        tokenizer=tokenizer,
-        data_collator=contrastive_data_collator
-    )
+    # # Training
+    # if training_args.do_train:
+    #     checkpoint = None
+    #     if training_args.resume_from_checkpoint is not None:
+    #         checkpoint = training_args.resume_from_checkpoint
+    #     elif last_checkpoint is not None:
+    #         checkpoint = last_checkpoint
+    #     train_result = trainer.train(resume_from_checkpoint=checkpoint)
+    #     trainer.save_model()  # Saves the tokenizer too for easy upload
 
-    # Training
-    if training_args.do_train:
-        checkpoint = None
-        if training_args.resume_from_checkpoint is not None:
-            checkpoint = training_args.resume_from_checkpoint
-        elif last_checkpoint is not None:
-            checkpoint = last_checkpoint
-        train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        trainer.save_model()  # Saves the tokenizer too for easy upload
+    #     metrics = train_result.metrics
+    #     try:
+    #         metrics['train_samples'] = len(train_dataset)
+    #     except:
+    #         metrics['train_samples'] = -1
 
-        metrics = train_result.metrics
-        try:
-            metrics['train_samples'] = len(train_dataset)
-        except:
-            metrics['train_samples'] = -1
-
-        trainer.log_metrics('train', metrics)
-        trainer.save_metrics('train', metrics)
-        trainer.save_state()
+    #     trainer.log_metrics('train', metrics)
+    #     trainer.save_metrics('train', metrics)
+    #     trainer.save_state()
 
 if __name__ == '__main__':
     main()

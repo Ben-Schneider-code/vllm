@@ -2,6 +2,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug Qwen",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/qwen/qwen_train.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0,1,2",
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug DeepSpeed",
             "type": "debugpy",
             "request": "launch",

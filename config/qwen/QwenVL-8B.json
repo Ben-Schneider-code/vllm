@@ -1,8 +1,6 @@
 {
-    "model_name_or_path": "/home/b3schnei/output/InternVL-8B-Pretrain",
-    "conv_style": "Hermes-2",
-    "output_dir": "/home/b3schnei/output/debug",
-    "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",
+    "model_name_or_path": "Qwen/Qwen2-VL-7B-Instruct",
+    "output_dir": "/home/b3schnei/output/QwenDebug",
     "overwrite_output_dir": true,
     "force_image_size": 448,
     "max_dynamic_patch": 6,
@@ -20,8 +18,8 @@
     "per_device_train_batch_size": 32,
     "gradient_accumulation_steps": 1,
     "save_strategy": "steps",
-    "save_steps": 250,
-    "save_total_limit": 4,
+    "save_steps": 1000,
+    "save_total_limit": 5,
     "learning_rate": 4e-5,
     "weight_decay": 0.01,
     "warmup_ratio": 0.03,
@@ -40,13 +38,12 @@
     "model_architecture": "IVLMLPLG",
     "eval_datasets": [
         "cc_pretrain",
-        "mscoco_pretrain",
-        "mscoco_instruct"
+        "mscoco_pretrain"
     ],
-    "instruction_mode": true,
     "eval_steps_per_dataset": 6,
     "evaluation_strategy": "steps",
     "per_device_eval_batch_size": 200,
-    "eval_steps": 3,
-    "training_dataset_name": "wiki_instruct"
+    "eval_steps": 100,
+    "negatives": 7,
+    "training_dataset_name": "cc_pretrain"
 }

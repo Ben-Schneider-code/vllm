@@ -30,7 +30,7 @@ from internvl.train.constants import (BOX_END_TOKEN, BOX_START_TOKEN,
                                       IMG_START_TOKEN, QUAD_END_TOKEN,
                                       QUAD_START_TOKEN, REF_END_TOKEN,
                                       REF_START_TOKEN)
-from internvl.train.contrastive_trainer import ContrastiveTrainer
+from util.contrastive_trainer import ContrastiveTrainer
 from internvl.train.dataset import (build_transform,
                                     dynamic_preprocess, preprocess,
                                     preprocess_internlm, preprocess_mpt,

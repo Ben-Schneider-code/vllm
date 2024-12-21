@@ -59,10 +59,7 @@ def main():
         tokenizer
     )
 
-    from torch.utils.data import DataLoader
-    dl = DataLoader(dataset=train_dataset, batch_size=8, num_workers=0, collate_fn=QwenCollate(tokenizer))
-    batch = next(enumerate(dl))
-    exit()
+
     def _freeze_params(module):
         for param in module.parameters():
             param.requires_grad = False

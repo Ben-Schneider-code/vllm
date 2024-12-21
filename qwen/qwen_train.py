@@ -1,11 +1,11 @@
 import torch
 import torch.distributed as dist
-import logging
-import os
+import os, sys, logging
 from transformers import set_seed, HfArgumentParser
+from util.contrastive_trainer import ContrastiveTrainer
 from util.dataclass import ModelArguments, DataTrainingArguments, VLMTrainingArguments
-from qwen.qwen2_vl.modeling_qwen2_vl import Qwen2VLModel
-from qwen.qwen2_vl.processing_qwen2_vl import Qwen2VLProcessor
+from transformers import Qwen2VLModel, Qwen2VLProcessor
+from qwen.qwen_dataset import build_contrastive_dataset, build_eval_datasets
 
 logger = logging.getLogger(__name__)
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
@@ -23,11 +23,8 @@ def load_model(model_args: ModelArguments, data_args: DataTrainingArguments, tra
 
     return model, processor
 
-def build_contrastive_dataset():
-    return None
 
-def build_eval_datasets():
-    return None
+
 
 def init_instruction_finetuning():
     return None
@@ -46,9 +43,18 @@ def main():
     if model_args.instruction_mode:
         model = init_instruction_finetuning(model)
 
-    train_dataset = build_contrastive_dataset()  
+    train_dataset = build_contrastive_dataset(
+    data_args,
+    tokenizer,
+    dataset_name=data_args.training_dataset_name,
+    is_train=True
+    )  
 
-    eval_dataset = build_eval_datasets()
+    eval_dataset = build_eval_datasets(
+        training_args.per_device_eval_batch_size,
+        data_args,
+        tokenizer
+    )
 
     def _freeze_params(module):
         for param in module.parameters():
@@ -99,14 +105,14 @@ def main():
     # set seed for torch dataloaders
     set_seed(training_args.seed)
 
-    # trainer = ContrastiveTrainer(
-    #     model=model,
-    #     args=training_args,
-    #     train_dataset=train_dataset if training_args.do_train else None,
-    #     eval_dataset=eval_dataset,
-    #     tokenizer=tokenizer,
-    #     data_collator=contrastive_data_collator
-    # )
+    trainer = ContrastiveTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset if training_args.do_train else None,
+        eval_dataset=eval_dataset,
+        tokenizer=tokenizer,
+        #data_collator=contrastive_data_collator
+    )
 
     # # Training
     # if training_args.do_train:

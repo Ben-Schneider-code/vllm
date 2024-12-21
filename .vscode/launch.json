@@ -8,7 +8,9 @@
             "program": "${env:VLLM_REPO}/qwen/qwen_train.py",
             "justMyCode": false,
             "console": "integratedTerminal",
-            "args": [],
+            "args": [
+                "${env:VLLM_REPO}/config/qwen/QwenVL-8B.json"
+            ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "0,1,2",
                 "PYTHONPATH": "${env:VLLM_REPO}",

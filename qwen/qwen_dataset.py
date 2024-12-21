@@ -6,6 +6,66 @@ from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsA
 from dataset_utils.mscoco import MSCOCOAdapter, MSCOCOInstructAdapter, MSCOCONegativeAdapter, MSCOCOPretrainAdapter
 from dataset_utils.wiki_instruct import WikiInstructAdapter
 from util.dataclass import DataTrainingArguments
+import os
+
+class QwenCollate:
+
+    def __init__(self, processor):
+        self.processor = processor
+
+    def __call__(self, features):
+
+        # flatten list of lists
+        if isinstance(features[0], list):
+            features = [item for sublist in features for item in sublist]
+        
+        query_batch = [item["query_tokenized"] for item in features]
+        cand_batch = [item["cand_tokenized"] for item in features]
+
+ 
+
+        if 'negatives_tokenized' in features[0]:
+            negatives_flattened = flatten_negatives(features)
+            cand_batch.extend(negatives_flattened)
+        
+        query_text, query_img = unzip(query_batch)
+        cand_text, _ = unzip(cand_batch)
+
+        # attach metadata to batch
+        meta = [{
+                "qid" : item["query"]["id"],
+                "q_image" : item["query"]["image"]  if "image" in item["query"] else None,
+                "pid" : item["pos_cand"]["id"],
+                "p_image" : item["pos_cand"]["image"] if "image" in item["pos_cand"] else None,
+                "q_conversation" : item["query"]["conversations"],
+                "p_conversation" : item["pos_cand"]["conversations"],
+                } for item in features]
+
+        query_batch =  self.processor(
+        text=query_text,
+        images=query_img,
+        padding=True,
+        return_tensors="pt",
+        )
+
+        cand_batch = self.processor(
+        text=cand_text,
+        padding=True,
+        return_tensors="pt",
+        )
+
+        return {
+            "query" : query_batch,
+            "pos_cand": cand_batch,
+            "meta": meta,
+        }
+
+def flatten_negatives(xss):
+    return [x for xs in xss for x in xs["negatives_tokenized"]]
+
+def unzip(tuples_list):
+    list1, list2 = zip(*tuples_list)
+    return list(list1), list(list2)
 
 class QwenContrastiveDataset(Dataset):
     """
@@ -43,6 +103,13 @@ class QwenContrastiveDataset(Dataset):
     }
     """
 
+    keyword_map = {
+        "from": "role",
+        "value": "content", # content is a list
+        "gpt": "assistant",
+        "human": "user"
+    }
+
 
     def __init__(
         self,
@@ -58,20 +125,47 @@ class QwenContrastiveDataset(Dataset):
     def __len__(self):
         return len(self.adapter)
 
-    def tokenize_input(self, messages):
-        print(messages)
+    def process(self, conversation,image=None):
+        """
+        The adapter returns different conversation keys than the tokenizer requires.
+        HF tokenizer uses "role": "user" or "assistant" and "content": <text>
+        Qwen also requires that images are inserted between <img> tags, see:
+        https://huggingface.co/learn/cookbook/en/fine_tuning_vlm_trl
+        """
 
-        text = self.processor.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
+        formatted_conversation = []
+        for turn in conversation:
+            formatted_conversation.append(
+                 {
+                    self.keyword_map["from"] : self.keyword_map[turn["from"]],
+                    self.keyword_map["value"]: [{"type": "text", "text": turn["value"]}]
+                 }
+            )
+
+        if image is not None:
+             formatted_conversation[0]["content"].insert(0, {
+                  "type": "image",
+                  "image": os.path.join(self.root, image)  
+             })
+        
+        return formatted_conversation
+
+    def tokenize_input(self, messages):
+        
+        if messages["conversations"][-1] == {"from" : "gpt", "value": ""}:
+            del messages["conversations"][-1]
+
+        formatted_conversation = self.process(messages["conversations"],image=messages.get("image"))
+
+        text_input = self.processor.apply_chat_template(
+            formatted_conversation, tokenize=False, add_generation_prompt=True
         )
-        image_inputs, video_inputs = process_vision_info(messages)
-        inputs = self.processor(
-        text=[text],
-        images=image_inputs,
-        videos=video_inputs,
-        padding=True,
-        return_tensors="pt",
-        ) 
+        image_inputs, _ = process_vision_info(formatted_conversation)
+        
+        if isinstance(image_inputs, list):
+             image_inputs = image_inputs[0]
+
+        return text_input, image_inputs
 
     def process_input(self, data_item):
         query = data_item["query"]

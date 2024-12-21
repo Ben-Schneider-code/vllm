@@ -5,7 +5,7 @@ from transformers import set_seed, HfArgumentParser
 from util.contrastive_trainer import ContrastiveTrainer
 from util.dataclass import ModelArguments, DataTrainingArguments, VLMTrainingArguments
 from transformers import Qwen2VLModel, Qwen2VLProcessor
-from qwen.qwen_dataset import build_contrastive_dataset, build_eval_datasets
+from qwen.qwen_dataset import build_contrastive_dataset, build_eval_datasets, QwenCollate
 
 logger = logging.getLogger(__name__)
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
@@ -13,8 +13,14 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
 def load_model(model_args: ModelArguments, data_args: DataTrainingArguments, training_args: VLMTrainingArguments):
 
+    min_pixels = 256*28*28
+    max_pixels = 512*28*28
     
-    processor = Qwen2VLProcessor.from_pretrained(model_args.model_name_or_path)
+    processor = Qwen2VLProcessor.from_pretrained(model_args.model_name_or_path,
+                                                padding_side="right",
+                                                use_fast=False,
+                                                max_pixels=max_pixels)
+
     model = Qwen2VLModel.from_pretrained(
         model_args.model_name_or_path,
         torch_dtype=torch.bfloat16,
@@ -22,9 +28,6 @@ def load_model(model_args: ModelArguments, data_args: DataTrainingArguments, tra
     )
 
     return model, processor
-
-
-
 
 def init_instruction_finetuning():
     return None
@@ -56,6 +59,10 @@ def main():
         tokenizer
     )
 
+    from torch.utils.data import DataLoader
+    dl = DataLoader(dataset=train_dataset, batch_size=8, num_workers=0, collate_fn=QwenCollate(tokenizer))
+    batch = next(enumerate(dl))
+    exit()
     def _freeze_params(module):
         for param in module.parameters():
             param.requires_grad = False

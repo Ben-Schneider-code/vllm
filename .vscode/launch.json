@@ -2,6 +2,26 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug DeepSpeed Qwen",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:DEEPSPEED}",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "--include",
+                "localhost:0,1",
+                "--master_port",
+                "44000",
+                "${env:VLLM_REPO}/qwen/qwen_train.py",
+                "${env:VLLM_REPO}/config/qwen/QwenVL-8B.json"
+            ],
+            "env": {
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug Qwen",
             "type": "debugpy",
             "request": "launch",

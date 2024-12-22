@@ -47,7 +47,7 @@ from transformers import (AutoConfig, AutoModelForCausalLM, AutoTokenizer,
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils.logging import (enable_default_handler,
                                         enable_explicit_format, set_verbosity)
-from monkey_patch.qwen_attn_patch import unmask_attn_monkey_patch, forward_memory_opt_monkey_patch
+from monkey_patch.qwen_attn_patch import unmask_attn_monkey_patch, monkey_patch_transformers_lib
 #from torch.profiler import profile, record_function, ProfilerActivity
 
 # Apply necessary patches for the transformers library
@@ -932,7 +932,7 @@ def main():
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, VLMTrainingArguments))
     model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[-1]))
     
-    forward_memory_opt_monkey_patch()
+    monkey_patch_transformers_lib()
     
     if MODEL_ARCHITECTURE[model_args.model_architecture].attn_mask == 'bidirectional':
         unmask_attn_monkey_patch()

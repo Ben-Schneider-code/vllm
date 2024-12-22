@@ -163,7 +163,7 @@ class DataTrainingArguments:
     )
     max_dynamic_patch: Optional[int] = field(
         default=12,
-        metadata={'help': 'The maximum number of dynamic patches. Default is 6.'},
+        metadata={'help': 'The maximum number of dynamic patches. Default is 12.'},
     )
     normalize_type: Optional[str] = field(
         default='imagenet',

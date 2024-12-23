@@ -530,6 +530,32 @@ class ContrastiveDataset(LazySupervisedDataset):
         else:
             raise Exception("InvalidTypeError")            
 
+
+class Split(Dataset):
+    def __init__(self, ds, idx) -> None:
+        super().__init__()
+        self.ds = ds
+        self.idx = idx
+
+    def __getitem__(self, i):
+        return self.ds[self.idx[i]]
+
+    def __len__(self):
+        return len(self.idx)
+
+# Last 128,000 samples are reserved for finetuning
+def get_split(ds, pretrain=True):
+    start_of_pretrain = 0
+    end_of_finetune = len(ds)
+    end_of_pretrain = end_of_finetune - 128000
+
+    if pretrain:
+        ds = Split(ds, list(range(start_of_pretrain, end_of_pretrain)))
+    else:
+        ds = Split(ds, list(range(end_of_pretrain, end_of_finetune)))
+
+    return ds
+
 def build_contrastive_dataset(
     data_args,
     tokenizer,
@@ -548,27 +574,6 @@ def build_contrastive_dataset(
     if dataset_name == 'cc':
         dataset = ContrastiveDataset(
                 ConceptualCaptionsAdapter(),
-                data_args.conv_style,
-                None,
-                tokenizer,
-                tcs_loader,
-                ds_name="conceptual_captions",
-                num_image_token= model.num_image_token if model is not None else None,
-                image_size=data_args.force_image_size,
-                is_train=True,
-                pad2square=data_args.pad2square,
-                group_by_length=group_by_length,
-                dynamic_image_size=dynamic_image_size,
-                use_thumbnail=use_thumbnail,
-                min_dynamic_patch=min_dynamic_patch,
-                max_dynamic_patch=max_dynamic_patch,
-                repeat_time=1,
-                normalize_type=normalize_type,
-                random_seed=0,
-            )
-    elif dataset_name == 'cc_neg':
-                dataset = ContrastiveDataset(
-                ConceptualCaptionsNegativeAdapter(),
                 data_args.conv_style,
                 None,
                 tokenizer,
@@ -652,7 +657,7 @@ def build_contrastive_dataset(
             )
     elif dataset_name == "cc_pretrain":
                 dataset = ContrastiveDataset(
-                ConceptualCaptionsPretrainAdapter(negatives=data_args.negatives if is_train else None),
+                get_split(ConceptualCaptionsPretrainAdapter(negatives=data_args.negatives if is_train else None), pretrain=True),
                 data_args.conv_style,
                 None,
                 tokenizer,
@@ -713,27 +718,6 @@ def build_contrastive_dataset(
         normalize_type=normalize_type,
         random_seed=0,
     )           
-    elif dataset_name == "wiki_instruct":
-            dataset = ContrastiveDataset(
-            WikiInstructAdapter(),
-            data_args.conv_style,
-            None,
-            tokenizer,
-            tcs_loader,
-            ds_name="wiki_instruct",
-            num_image_token= model.num_image_token if model is not None else None,
-            image_size=data_args.force_image_size,
-            is_train=True,
-            pad2square=data_args.pad2square,
-            group_by_length=group_by_length,
-            dynamic_image_size=dynamic_image_size,
-            use_thumbnail=use_thumbnail,
-            min_dynamic_patch=min_dynamic_patch,
-            max_dynamic_patch=max_dynamic_patch,
-            repeat_time=1,
-            normalize_type=normalize_type,
-            random_seed=0,
-        )
     else:
         raise Exception("NotImplementedError")
     

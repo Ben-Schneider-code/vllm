@@ -218,6 +218,7 @@ class Split(Dataset):
         super().__init__()
         self.ds = ds
         self.idx = idx
+        self.root = ds.root
 
     def __getitem__(self, i):
         return self.ds[self.idx[i]]

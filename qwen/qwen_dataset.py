@@ -2,9 +2,8 @@ import torch
 from typing import Dict
 from torch.utils.data import Dataset, Subset
 from qwen.vision_process import process_vision_info
-from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsNegativeAdapter, ConceptualCaptionsPretrainAdapter
-from dataset_utils.mscoco import MSCOCOAdapter, MSCOCOInstructAdapter, MSCOCONegativeAdapter, MSCOCOPretrainAdapter
-from dataset_utils.wiki_instruct import WikiInstructAdapter
+from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsPretrainAdapter
+from dataset_utils.mscoco import MSCOCOAdapter, MSCOCOInstructAdapter, MSCOCOPretrainAdapter
 from util.dataclass import DataTrainingArguments
 import os
 import random

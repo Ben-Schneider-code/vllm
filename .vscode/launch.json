@@ -2,6 +2,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug Finetune Data",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/finetune/finetuning_data.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "~/keys.json",
+                "~/gpt_output.json"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0,1,2",
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug DeepSpeed Qwen",
             "type": "debugpy",
             "request": "launch",

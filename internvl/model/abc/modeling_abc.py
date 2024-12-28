@@ -148,9 +148,14 @@ class abcQwenVL(Qwen2VLForConditionalGeneration):
                 "c": c_emb.detach().cpu()
             }
         return (loss, outputs) if (return_outputs or return_prediction) else loss
+    
+    def embed(self, inputs, instruction_mask = None):
+        with torch.no_grad():
+            hiddens : CausalLMOutputWithPast = super().forward(**inputs, output_hidden_states=True)
+            averaged_hiddens = get_mean_token_embed(inputs["input_ids"], hiddens.hidden_states[-1], 0, instruction_mask=instruction_mask)
+            proj = self.mlp_head(averaged_hiddens).float()
+            return F.normalize(proj, dim=-1).detach()
 
-# TODO add update these model archs to support
-# 1. Hard negatives
 MODEL_ARCHITECTURE = {
     "IVLMLPLG": abcInternVL,
     "ABCQWEN": abcQwenVL

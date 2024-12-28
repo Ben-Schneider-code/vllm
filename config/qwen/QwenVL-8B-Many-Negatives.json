@@ -1,13 +1,13 @@
 {
     "model_name_or_path": "Qwen/Qwen2-VL-7B-Instruct",
-    "output_dir": "/home/b3schnei/output/QwenVL-8B-Pretrain-High-Res",
+    "output_dir": "/home/b3schnei/output/QwenVL-8B-Large-Batch",
     "overwrite_output_dir": true,
     "use_backbone_lora": 64,
     "use_llm_lora": 64,
     "dataloader_num_workers": 8,
     "bf16": true,
     "num_train_epochs": 1,
-    "per_device_train_batch_size": 32,
+    "per_device_train_batch_size": 48,
     "gradient_accumulation_steps": 1,
     "save_strategy": "steps",
     "save_steps": 1000,
@@ -31,10 +31,10 @@
     ],
     "eval_steps_per_dataset": 6,
     "evaluation_strategy": "steps",
-    "per_device_eval_batch_size": 50,
-    "eval_steps": 2000,
-    "negatives": 7,
+    "per_device_eval_batch_size": 100,
+    "eval_steps": 200,
+    "negatives": 12,
     "training_dataset_name": "cc_pretrain",
-    "max_dynamic_patch": 1024,
-    "min_dynamic_patch": 512
+    "max_dynamic_patch": 512,
+    "min_dynamic_patch": 256
 }

@@ -10,7 +10,9 @@
             "console": "integratedTerminal",
             "args": [
                 "~/keys.json",
-                "~/gpt_output.json"
+                "32",
+                "0",
+                "100"
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "0,1,2",

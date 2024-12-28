@@ -4,22 +4,15 @@ import base64
 from openai import AzureOpenAI  
 import orjson
 import sys
-
+from tqdm import tqdm
 from qwen.qwen_dataset import get_split
 
-api_key_path = sys.argv[1]
-output_file_path = sys.argv[2]
+start, end = int(sys.argv[1]), int(sys.argv[2])
 ds = get_split(ConceptualCaptionsPretrainAdapter(negatives=None), pretrain=False)
 root = ds.root
 
-start, end  = 0, 2
-
-with open(api_key_path, "rb") as file:  # Use "rb" mode for orjson
-    data = orjson.loads(file.read())
-
-
-endpoint = data["ENDPOINT"]
-subscription_key = data["KEY"]
+endpoint = os.getenv("ENDPOINT", "NONE")
+subscription_key = os.getenv("KEY", "NONE")
 deployment = os.getenv("DEPLOYMENT_NAME", "gpt-4o")  
 
 client = AzureOpenAI(  
@@ -27,6 +20,10 @@ client = AzureOpenAI(
     api_key=subscription_key,  
     api_version="2024-05-01-preview",  
 )
+
+in_price = 5 / 1_000_000
+out_price = 15 / 1_000_000
+cost = 0
 
 def query_gpt(ds, idx):
 
@@ -83,27 +80,43 @@ def query_gpt(ds, idx):
         stream=False
     )
 
+    # Extract token usage
+    token_usage = completion.usage
+    prompt_tokens = token_usage.prompt_tokens
+    completion_tokens = token_usage.completion_tokens
     json_str = completion.to_json()
     comp_dict = orjson.loads(json_str)    
 
-    return comp_dict, item
+    return comp_dict, item, prompt_tokens, completion_tokens
 
 output = []
-for i in range(start, end):
+for i in tqdm(range(start, end)):
 
     try:
-        completion, item = query_gpt(ds, i)
+        completion, item, prompt_tokens, completion_tokens = query_gpt(ds, i)
         o = {
             "id": item["id"],
             "item": item,
-            "response": completion.to_json()
-
+            "response": completion,
         }
         output.append(o)
 
-    except:
-        print(f"fail on index {i}")
+        prompt_token_cost =  prompt_tokens*in_price
+        completion_token_cost = completion_tokens*out_price
+        cost += prompt_token_cost+ completion_token_cost
+
+        # Print running list of token usage and cost
+        tqdm.write(f"Index: {i}, Prompt Tokens: {prompt_tokens}, Completion Tokens: {completion_tokens}, Total Cost: ${cost:.4f}")
+
+    except Exception as e:
+        print(e)
+
+output_file_path = os.path.expanduser(f"~/gpt_output_{start}_to_{end}.json")
+print(f"Final cost was ${cost:.4f}")
+print(f"Cost per item is ${cost/len(output):.4f}")
 
 # Save the output using orjson
 with open(output_file_path, "wb") as file:  # Use "wb" mode for orjson
     file.write(orjson.dumps(output, option=orjson.OPT_INDENT_2))  # Pretty-print with indentation
+
+print(f"Output written to {output_file_path}")

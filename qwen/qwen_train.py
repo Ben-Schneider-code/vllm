@@ -113,12 +113,13 @@ def main():
 
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
-    print(model)
+
     # print trainable parameters
     if dist.get_rank() == 0:
+        print("PARAMS BEING TRAINED:")
         for name, param in model.named_parameters():
             if param.requires_grad:
-                logger.info(name)
+                print(name)
 
     # set seed for torch dataloaders
     set_seed(training_args.seed)

@@ -2,18 +2,20 @@ import torch
 from monkey_patch.qwen_attn_patch import monkey_patch_transformers_lib, unmask_attn_monkey_patch
 from qwen.vision_process import process_vision_info
 import functools
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, get_peft_model, PeftModel
+from collections.abc import Mapping
 
 def _prepare_input(data):
     """
     Prepares one `data` before feeding it to the model, be it a tensor or a nested list/dictionary of tensors.
     """
-    if isinstance(data):
+    if isinstance(data, Mapping):
         return type(data)({k: _prepare_input(v) for k, v in data.items()})
     elif isinstance(data, (tuple, list)):
         return type(data)(_prepare_input(v) for v in data)
     elif isinstance(data, torch.Tensor):
-        return data.cuda()
+        cuda_tensor = data.cuda()
+        return cuda_tensor
     return data
 
 def get_model_with_embed_function(model_type, model_path):
@@ -27,45 +29,17 @@ def get_model_with_embed_function(model_type, model_path):
      
      
         # Load base model
-        model = abcQwenVL.from_pretrained(
+        base_model = abcQwenVL.from_pretrained(
         "Qwen/Qwen2-VL-7B-Instruct",
         torch_dtype=torch.bfloat16,
         attn_implementation="flash_attention_2",
         )
 
-        target_modules = ['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj', 'self_attn.o_proj',
-                              'mlp.gate_proj', 'mlp.down_proj', 'mlp.up_proj']
-        
-        lora_config = LoraConfig(
-            r=64,
-            target_modules=target_modules,
-            lora_alpha=2*64,
-            lora_dropout=0.05,
-            #task_type='CAUSAL_LM', # Dictates params are passed to the underlying HG model by the PEFT wrapper.
-            use_dora=False
-        )
+        #model.load_adapter("/home/b3schnei/output/QwenVL-8B-check-save/checkpoint-5", "loaded_lora")
+        model = PeftModel.from_pretrained(base_model, "/home/b3schnei/output/QwenVL-8B-check-save/checkpoint-5")
 
-        model.model = get_peft_model(model.model, lora_config)
-
-        target_modules = ['attn.qkv', 'attn.proj', 'mlp.fc1', 'mlp.fc2']
-        lora_config = LoraConfig(
-            r=64,
-            target_modules=target_modules,
-            lora_alpha=2*64,
-            lora_dropout=0.05,
-            use_dora=False
-        )
-        model.visual = get_peft_model(model.visual, lora_config)
-        print("applied LoRA")
-#        l = list((model.state_dict().keys()))
-#        torch.save(l, "/home/b3schnei/model.keys")
-
-        # Load base model LoRA local model
-        model = model.from_pretrained(
-            model_path,
-            torch_dtype=torch.bfloat16,
-            attn_implementation="flash_attention_2",
-        )
+        model = model.merge_and_unload()
+        model.to(torch.bfloat16).cuda()
 
         processor = AutoProcessor.from_pretrained(model_path,
                                                     padding_side="right",
@@ -106,5 +80,7 @@ def get_model_with_embed_function(model_type, model_path):
                 return_tensors="pt",
             )
 
-            return model.embed(_prepare_input(inps)).cpu()
+            inps = _prepare_input(inps)
+            output = model.embed(inps)
+            return output.cpu()
         return functools.partial(embed, model, processor)

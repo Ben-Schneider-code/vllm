@@ -150,7 +150,7 @@ class abcQwenVL(Qwen2VLForConditionalGeneration):
         outputs = {}
         if return_outputs:
             outputs["accuracy"] = acc
-            outputs["temperature"] = self.temperature.get_temp()
+            outputs["temperature"] = self.temperature.original_module.get_temp()
             outputs["num_cand"] = num_cand
 
         if return_prediction:

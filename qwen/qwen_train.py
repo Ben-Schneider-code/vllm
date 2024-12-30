@@ -90,35 +90,30 @@ def main():
     has_lora_weights = [key for key in model.state_dict().keys() if 'lora' in key.lower()]
     if has_lora_weights: print("Has lora weight already, skipping lora init")
 
+    target_modules = []
     # LoRA for LLM
     if model_args.use_llm_lora and not has_lora_weights:
-        target_modules = ['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj', 'self_attn.o_proj',
-                              'mlp.gate_proj', 'mlp.down_proj', 'mlp.up_proj']
-        lora_config = LoraConfig(
-            r=model_args.use_llm_lora,
-            target_modules=target_modules,
-            lora_alpha=2*model_args.use_llm_lora,
-            lora_dropout=model_args.lora_dropout,
-            #task_type='CAUSAL_LM', # Dictates params are passed to the underlying HG model by the PEFT wrapper.
-            use_dora=model_args.use_dora
-        )
-        model.model = get_peft_model(model.model, lora_config)
-        model.model.print_trainable_parameters()
+        target_modules.extend(['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj', 'self_attn.o_proj',
+                              'mlp.gate_proj', 'mlp.down_proj', 'mlp.up_proj'])
+
 
     # LoRA for vision backbone
     if model_args.use_backbone_lora and not has_lora_weights:
-        target_modules = ['attn.qkv', 'attn.proj', 'mlp.fc1', 'mlp.fc2']
+        target_modules.extend(['attn.qkv', 'attn.proj', 'mlp.fc1', 'mlp.fc2'])
         
-        lora_config = LoraConfig(
-            r=model_args.use_backbone_lora,
-            target_modules=target_modules,
-            lora_alpha=2*model_args.use_backbone_lora,
-            lora_dropout=model_args.lora_dropout,
-            use_dora=model_args.use_dora
-        )
-        model.visual = get_peft_model(model.visual, lora_config)
-        model.visual.print_trainable_parameters()
 
+    lora_config = LoraConfig(
+        r=model_args.use_llm_lora,
+        target_modules=target_modules,
+        lora_alpha=2*model_args.use_llm_lora,
+        lora_dropout=model_args.lora_dropout,
+        use_dora=model_args.use_dora,
+        modules_to_save=["temperature","mlp_head"]
+    )
+
+    model = get_peft_model(model, lora_config)
+    model.print_trainable_parameters()
+    print(model)
     # print trainable parameters
     if dist.get_rank() == 0:
         for name, param in model.named_parameters():

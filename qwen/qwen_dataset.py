@@ -268,7 +268,7 @@ def build_contrastive_dataset(
             )
     elif dataset_name == "mscoco_pretrain":
             dataset = QwenContrastiveDataset(
-            MSCOCOPretrainAdapter(negatives=data_args.negatives if is_train else None),
+            MSCOCOPretrainAdapter(negatives=None),
             tokenizer,
 
         )       

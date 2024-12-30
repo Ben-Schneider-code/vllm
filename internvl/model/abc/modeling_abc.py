@@ -33,6 +33,18 @@ class MLP(nn.Module):
         out = x+y
         return out
 
+class Temperature(nn.Module):
+    
+    def __init__(self):
+        super().__init__()
+        self.temp = nn.Parameter(torch.tensor(0.07, requires_grad=True, dtype=torch.float32))        
+    
+    def forward(self, x):
+        return x/(self.temp.float())
+
+    def get_temp(self):
+        self.temp.data.clone()
+
 class abcInternVL(InternVLChatModel):
     
     """
@@ -48,7 +60,7 @@ class abcInternVL(InternVLChatModel):
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
         self.mlp_head = MLP(config.llm_config.hidden_size, hidden_size=4096)
-        self.temperature = nn.Parameter(torch.tensor(0.07, requires_grad=True, dtype=torch.float32))
+        self.temperature = Temperature()
         
     def forward(self, inputs, return_outputs=False, return_prediction=False):
 
@@ -75,12 +87,12 @@ class abcInternVL(InternVLChatModel):
         c_emb = F.normalize(c_emb, dim=-1)
         
         # eval batch_size is num_gpus * eval_per_gpu
-        loss, acc, num_cand = compute_gathered_loss(q_emb, c_emb, temperature=self.temperature.float(), label_smoothing=0.1)
+        loss, acc, num_cand = compute_gathered_loss(q_emb, c_emb, temperature=self.temperature, label_smoothing=0.1)
 
         outputs = {}
         if return_outputs:
             outputs["accuracy"] = acc
-            outputs["temperature"] = self.temperature.data.clone()
+            outputs["temperature"] = self.temperature.get_temp()
             outputs["num_cand"] = num_cand
 
         if return_prediction:
@@ -106,7 +118,7 @@ class abcQwenVL(Qwen2VLForConditionalGeneration):
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
         self.mlp_head = MLP(config.hidden_size, hidden_size=4096)
-        self.temperature = nn.Parameter(torch.tensor(0.07, requires_grad=True, dtype=torch.float32))
+        self.temperature = Temperature()
         
     def forward(self, inputs, return_outputs=False, return_prediction=False):
 
@@ -133,12 +145,12 @@ class abcQwenVL(Qwen2VLForConditionalGeneration):
         c_emb = F.normalize(c_emb, dim=-1)
         
         # eval batch_size is num_gpus * eval_per_gpu
-        loss, acc, num_cand = compute_gathered_loss(q_emb, c_emb, temperature=self.temperature.float(), label_smoothing=0.1)
+        loss, acc, num_cand = compute_gathered_loss(q_emb, c_emb, temperature=self.temperature, label_smoothing=0.1)
 
         outputs = {}
         if return_outputs:
             outputs["accuracy"] = acc
-            outputs["temperature"] = self.temperature.data.clone()
+            outputs["temperature"] = self.temperature.get_temp()
             outputs["num_cand"] = num_cand
 
         if return_prediction:

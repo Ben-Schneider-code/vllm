@@ -2,6 +2,21 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug Parse 4o",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/finetune/parse_4o.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "/home/b3schnei/data.json",
+                "/home/b3schnei/parsed_data.json",
+            ],
+            "env": {
+                "PYTHONPATH": "${env:VLLM_REPO}",
+            }
+        },
+        {
             "name": "Debug Eval",
             "type": "debugpy",
             "request": "launch",
@@ -205,20 +220,6 @@
             }
         },
         {
-            "name": "Debug Wiki",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${env:VLLM_REPO}/dataset_utils/wiki_instruct.py",
-            "justMyCode": false,
-            "console": "integratedTerminal",
-            "args": [],
-            "env": {
-                "PYTHONPATH": "${env:VLLM_REPO}",
-                "WANDB_MODE": "offline",
-                "CUDA_VISIBLE_DEVICES": "0,1,2,3"
-            }
-        },
-        {
             "name": "Debug Embed_",
             "type": "debugpy",
             "request": "launch",
@@ -233,46 +234,6 @@
                 "PYTHONPATH": "${env:VLLM_REPO}",
                 "WANDB_MODE": "offline",
                 "CUDA_VISIBLE_DEVICES": "5"
-            }
-        },
-        {
-            "name": "Debug LastToken",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${env:DEEPSPEED}",
-            "justMyCode": false,
-            "console": "integratedTerminal",
-            "args": [
-                "--include",
-                "localhost:0,1",
-                "--master_port",
-                "44000",
-                "${env:VLLM_REPO}/internvl/train/internvl_chat_finetune.py",
-                "${env:VLLM_REPO}/config/lora_last_token.json"
-            ],
-            "env": {
-                "PYTHONPATH": "${env:VLLM_REPO}",
-                "WANDB_MODE": "offline"
-            }
-        },
-        {
-            "name": "Debug DeepSpeed - MULTIPLE GPU",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${env:DEEPSPEED}",
-            "justMyCode": false,
-            "console": "integratedTerminal",
-            "args": [
-                "--include",
-                "localhost:0,1",
-                "--master_port",
-                "44000",
-                "${env:VLLM_REPO}/internvl/train/internvl_chat_finetune.py",
-                "${env:VLLM_REPO}/config/debug.json"
-            ],
-            "env": {
-                "PYTHONPATH": "${env:VLLM_REPO}",
-                "WANDB_MODE": "offline"
             }
         }
     ]

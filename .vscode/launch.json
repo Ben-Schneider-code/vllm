@@ -5,7 +5,7 @@
             "name": "Debug Eval",
             "type": "debugpy",
             "request": "launch",
-            "program": "${env:VLLM_REPO}/evaluate/eval.py",
+            "program": "${env:VLLM_REPO}/evaluate/eval_mscoco.py",
             "justMyCode": false,
             "console": "integratedTerminal",
             "args": [
@@ -46,7 +46,7 @@
             "console": "integratedTerminal",
             "args": [
                 "--include",
-                "localhost:0",
+                "localhost:0,1",
                 "--master_port",
                 "44000",
                 "${env:VLLM_REPO}/qwen/qwen_train.py",

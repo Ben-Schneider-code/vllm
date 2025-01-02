@@ -42,8 +42,9 @@ class Temperature(nn.Module):
     def forward(self, x):
         return x/(self.temp.float())
 
+    #TODO fix temperature logging
     def get_temp(self):
-        self.temp.data.clone()
+        return self.temp.data.clone()
 
 class abcInternVL(InternVLChatModel):
     

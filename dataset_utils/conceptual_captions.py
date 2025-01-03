@@ -221,18 +221,23 @@ class ConceptualCaptionsInstructionAdapter(ConceptualCaptionsPretrainAdapter):
 
         # Reduce dataset to only items we have instructions for
         keys = self.instructions.keys()
-        self.meta = list(filter(lambda i: str(i["id"]) in keys, self.meta))
+        self.instruction_meta = list(filter(lambda i: str(i["id"]) in keys, self.meta))
     
+    def __len__(self):
+        return len(self.instruction_meta)
+
     # Currently the modality is image -> text
     def __getitem__(self, idx):
-        metadata = self.meta[idx]
+        metadata = self.instruction_meta[idx]
         image = metadata["image"]
-        prompt_1 = self.instructions[[metadata["id"]]]["prompt 1"]
-        caption_1 = self.instructions[[metadata["id"]]]["caption 1"]
-        prompt_2 = self.instructions[[metadata["id"]]]["prompt 2"]
-        caption_2 = self.instructions[[metadata["id"]]]["caption 2"]
+        id = str(metadata["id"])
 
-        url = self.instructions[[metadata["id"]]]["url"]
+        prompt_1 = self.instructions[id]["data"]["prompt 1"]
+        caption_1 = self.instructions[id]["data"]["caption 1"]
+        prompt_2 = self.instructions[id]["data"]["prompt 2"]
+        caption_2 = self.instructions[id]["data"]["caption 2"]
+        url = self.instructions[id]["url"]
+
         assert url == metadata["url"]
         formatted_item = [{
             "id": metadata["id"],
@@ -256,7 +261,7 @@ class ConceptualCaptionsInstructionAdapter(ConceptualCaptionsPretrainAdapter):
         {
             "id": metadata["id"],
             "url": metadata["url"], 
-            "pos_cand": self._create_candidate(metadata, custom_caption=caption_1), # change to create instruction
+            "pos_cand": self._create_candidate(metadata, custom_caption=caption_1),
             "query": {
                 "id": metadata["id"],
                 "image": image,
@@ -295,7 +300,7 @@ class ConceptualCaptionsInstructionAdapter(ConceptualCaptionsPretrainAdapter):
 
 
         if self.negatives is not None:
-            self._attach_negatives(idx,formatted_item)
+            self._attach_negatives(idx,formatted_item[0])
 
         return formatted_item
 

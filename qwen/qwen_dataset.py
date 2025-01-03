@@ -22,11 +22,9 @@ class QwenCollate:
         query_batch = [item["query_tokenized"] for item in features]
         cand_batch = [item["cand_tokenized"] for item in features]
 
- 
-
-        if 'negatives_tokenized' in features[0]:
-            negatives_flattened = flatten_negatives(features)
-            cand_batch.extend(negatives_flattened)
+        for item in features:
+            if 'negatives_tokenized' in item:
+                cand_batch.extend(item["negatives_tokenized"])
         
         query_text, query_img = unzip(query_batch)
         cand_text, _ = unzip(cand_batch)
@@ -59,9 +57,6 @@ class QwenCollate:
             "pos_cand": cand_batch,
             "meta": meta,
         }
-
-def flatten_negatives(xss):
-    return [x for xs in xss for x in xs["negatives_tokenized"]]
 
 def unzip(tuples_list):
     list1, list2 = zip(*tuples_list)

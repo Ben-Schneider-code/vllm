@@ -2,7 +2,7 @@ import torch
 from typing import Dict
 from torch.utils.data import Dataset, Subset
 from qwen.vision_process import process_vision_info
-from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsPretrainAdapter
+from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsInstructionAdapter, ConceptualCaptionsPretrainAdapter
 from dataset_utils.mscoco import MSCOCOAdapter, MSCOCOInstructAdapter, MSCOCOPretrainAdapter
 from util.dataclass import DataTrainingArguments
 import os
@@ -266,6 +266,11 @@ def build_contrastive_dataset(
                 get_split(ConceptualCaptionsPretrainAdapter(negatives=data_args.negatives if is_train else None), pretrain=True),
                 tokenizer
             )
+    elif dataset_name == "instruct":
+            dataset = QwenContrastiveDataset(
+                ConceptualCaptionsInstructionAdapter(negatives=data_args.negatives if is_train else None),
+                tokenizer
+        )
     elif dataset_name == "mscoco_pretrain":
             dataset = QwenContrastiveDataset(
             MSCOCOPretrainAdapter(negatives=None),

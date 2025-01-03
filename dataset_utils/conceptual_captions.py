@@ -159,13 +159,19 @@ class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
         item["negatives"] = [self._create_candidate(self.meta[negatives_for_idx[i]]) for i in neg_idx]
 
 
-    def _create_candidate(self, metadata):
+    def _create_candidate(self, metadata, custom_caption = None):
+
+        caption = metadata["caption"] 
+
+        if custom_caption:
+            caption = custom_caption
+
         return {
                 "id": metadata["id"],
                 "conversations": [
                     {
                         "from": "human",
-                        "value": metadata["caption"] 
+                        "value": caption
 
                     },
                     {
@@ -201,6 +207,93 @@ class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
             }
         }
         
+        if self.negatives is not None:
+            self._attach_negatives(idx,formatted_item)
+
+        return formatted_item
+
+class ConceptualCaptionsInstructionAdapter(ConceptualCaptionsPretrainAdapter):
+
+    def __init__(self, negatives=None):
+        super().__init__(negatives=negatives)
+        with open(os.path.join(self.root, "train_instructions.json"), 'rb') as f:
+            self.instructions = orjson.loads(f.read())
+
+        # Reduce dataset to only items we have instructions for
+        keys = self.instructions.keys()
+        self.meta = list(filter(lambda i: str(i["id"]) in keys, self.meta))
+    
+    # Currently the modality is image -> text
+    def __getitem__(self, idx):
+        metadata = self.meta[idx]
+        image = metadata["image"]
+        prompt_1 = self.instructions[[metadata["id"]]]["prompt 1"]
+        caption_1 = self.instructions[[metadata["id"]]]["caption 1"]
+        prompt_2 = self.instructions[[metadata["id"]]]["prompt 2"]
+        caption_2 = self.instructions[[metadata["id"]]]["caption 2"]
+
+        url = self.instructions[[metadata["id"]]]["url"]
+        assert url == metadata["url"]
+        formatted_item = [{
+            "id": metadata["id"],
+            "url": metadata["url"], 
+            "pos_cand": self._create_candidate(metadata),
+            "query": {
+                "id": metadata["id"],
+                "image": image,
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": ""
+                    },
+                    {
+                        "from": "gpt",
+                        "value": ""
+                    }
+                ]
+            }
+        },
+        {
+            "id": metadata["id"],
+            "url": metadata["url"], 
+            "pos_cand": self._create_candidate(metadata, custom_caption=caption_1), # change to create instruction
+            "query": {
+                "id": metadata["id"],
+                "image": image,
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": f"Instruction: {prompt_1}"
+                    },
+                    {
+                        "from": "gpt",
+                        "value": ""
+                    }
+                ]
+            }
+        },
+        {
+            "id": metadata["id"],
+            "url": metadata["url"], 
+            "pos_cand":self._create_candidate(metadata, custom_caption=caption_2),
+            "query": {
+                "id": metadata["id"],
+                "image": image,
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": f"Instruction: {prompt_2}"
+                    },
+                    {
+                        "from": "gpt",
+                        "value": ""
+                    }
+                ]
+            }
+        }]
+        
+
+
         if self.negatives is not None:
             self._attach_negatives(idx,formatted_item)
 

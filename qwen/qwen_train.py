@@ -53,10 +53,6 @@ def main():
 
     model, tokenizer = load_model(model_args, data_args, training_args)
 
-    # if we are doing instruction finetuning fuse the LoRA weights and init new ones
-    if model_args.instruction_mode:
-        model = init_instruction_finetuning(model)
-
     train_dataset = build_contrastive_dataset(
     data_args,
     tokenizer,

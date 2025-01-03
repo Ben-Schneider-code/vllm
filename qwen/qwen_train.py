@@ -8,7 +8,7 @@ from transformers import AutoProcessor
 from qwen.qwen_dataset import build_contrastive_dataset, build_eval_datasets, QwenCollate
 from internvl.model.abc.modeling_abc import MODEL_ARCHITECTURE
 from monkey_patch.qwen_attn_patch import monkey_patch_transformers_lib, unmask_attn_monkey_patch
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, get_peft_model, PeftModel
 
 logger = logging.getLogger(__name__)
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
@@ -31,10 +31,10 @@ def load_model(model_args: ModelArguments, data_args: DataTrainingArguments, tra
         attn_implementation="flash_attention_2",
     )
 
-    return model, processor
+    if model_args.adapter:
+        model = PeftModel.from_pretrained(model, model_args.adapter, is_trainable=True)
 
-def init_instruction_finetuning():
-    return None
+    return model, processor
 
 def main():
     
@@ -97,18 +97,17 @@ def main():
     if model_args.use_backbone_lora and not has_lora_weights:
         target_modules.extend(['attn.qkv', 'attn.proj', 'mlp.fc1', 'mlp.fc2'])
         
-
-    lora_config = LoraConfig(
-        r=model_args.use_llm_lora,
-        target_modules=target_modules,
-        lora_alpha=2*model_args.use_llm_lora,
-        lora_dropout=model_args.lora_dropout,
-        use_dora=model_args.use_dora,
-        modules_to_save=["temperature","mlp_head"]
-    )
-
-    model = get_peft_model(model, lora_config)
-    model.print_trainable_parameters()
+    if len(target_modules):
+        lora_config = LoraConfig(
+            r=model_args.use_llm_lora,
+            target_modules=target_modules,
+            lora_alpha=2*model_args.use_llm_lora,
+            lora_dropout=model_args.lora_dropout,
+            use_dora=model_args.use_dora,
+            modules_to_save=["temperature","mlp_head"]
+        )
+        model = get_peft_model(model, lora_config)
+        model.print_trainable_parameters()
 
     # print trainable parameters
     if dist.get_rank() == 0:

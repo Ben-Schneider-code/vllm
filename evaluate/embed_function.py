@@ -24,7 +24,7 @@ def get_model_with_embed_function(model_type, model_path):
         unmask_attn_monkey_patch()
         min_pixels = 256*28*28
         max_pixels = 512*28*28
-        from transformers import AutoProcessor, AutoModel
+        from transformers import AutoProcessor
         from internvl.model.abc.modeling_abc import abcQwenVL
      
      

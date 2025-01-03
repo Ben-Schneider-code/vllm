@@ -11,6 +11,10 @@ class ModelArguments:
         default=None,
         metadata={'help': 'Path to pretrained model or model identifier from huggingface.co/models'}
     )
+    adapter: Optional[str] = field(
+        default=None,
+        metadata={'help': 'LoRA adapter to load.'}
+    )
     vision_path: Optional[str] = field(
         default=None,
         metadata={'help': 'Path to pretrained model or model identifier from huggingface.co/models'}

@@ -65,7 +65,6 @@ def eval_mscoco(fxn):
 
     for x in test:
         x["image"] = os.path.join( os.path.dirname(mscoco_eval_path),x["filepath"],x["filename"])
-        #images = [os.path.join( os.path.dirname(mscoco_eval_path),x["filepath"],x["filename"])  for x in test]
     
     text = []
     for i, x in enumerate(test):

@@ -34,7 +34,7 @@ def get_model_with_embed_function(model_type, model_path):
         torch_dtype=torch.bfloat16,
         attn_implementation="flash_attention_2",
         )
-        model = PeftModel.from_pretrained(base_model, "/home/b3schnei/output/QwenVL-8B-Large-Batch")
+        model = PeftModel.from_pretrained(base_model, "/home/b3schnei/output/QwenVL-8B-Large-Batch/checkpoint-2000")
 
         model = model.merge_and_unload()
         model.to(torch.bfloat16).cuda()

@@ -33,6 +33,8 @@ def load_model(model_args: ModelArguments, data_args: DataTrainingArguments, tra
 
     if model_args.adapter:
         model = PeftModel.from_pretrained(model, model_args.adapter, is_trainable=True)
+        if model_args.merge:
+            model = model.merge_and_unload()
 
     return model, processor
 
@@ -75,23 +77,22 @@ def main():
             param.requires_grad = True
 
     # Freeze base model weights
-    _freeze_params(model)
-    _unfreeze_params(model.mlp_head)
-    model.temperature.requires_grad = True
+    has_lora_weights = [key for key in model.state_dict().keys() if 'lora' in key.lower()]
+    if has_lora_weights: print("Has lora weight already, skipping lora init")
+    else:
+        _freeze_params(model)
+        _unfreeze_params(model.mlp_head)
+        model.temperature.requires_grad = True
 
     if model_args.grad_checkpoint:
         model.model.gradient_checkpointing_enable()
         model.visual.gradient_checkpointing_enable()
-
-    has_lora_weights = [key for key in model.state_dict().keys() if 'lora' in key.lower()]
-    if has_lora_weights: print("Has lora weight already, skipping lora init")
 
     target_modules = []
     # LoRA for LLM
     if model_args.use_llm_lora and not has_lora_weights:
         target_modules.extend(['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj', 'self_attn.o_proj',
                               'mlp.gate_proj', 'mlp.down_proj', 'mlp.up_proj'])
-
 
     # LoRA for vision backbone
     if model_args.use_backbone_lora and not has_lora_weights:

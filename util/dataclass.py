@@ -15,6 +15,10 @@ class ModelArguments:
         default=None,
         metadata={'help': 'LoRA adapter to load.'}
     )
+    merge: Optional[str] = field(
+        default=False,
+        metadata={'help': 'LoRA where to merge adapter into underlying model.'}
+    )
     vision_path: Optional[str] = field(
         default=None,
         metadata={'help': 'Path to pretrained model or model identifier from huggingface.co/models'}

@@ -36,6 +36,7 @@
     "per_device_eval_batch_size": 100,
     "eval_steps": 25,
     "negatives": 19,
+    "instruction_mode": true,
     "training_dataset_name": "instruct",
     "max_dynamic_patch": 512,
     "min_dynamic_patch": 256

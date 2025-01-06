@@ -81,7 +81,7 @@ def eval_mscoco(fxn):
             preds = cand[x["image"]]
             if intersect(preds, targets): acc += 1
         acc = acc / len(test)
-        print(f"i2t top{topk} is {acc:.3f}")
+        print(f"i2t top{topk} is {acc:.4f}")
 
     # t2i
     for topk in [1,5,10]:
@@ -96,7 +96,7 @@ def eval_mscoco(fxn):
                 if intersect(preds, targets): acc += 1
                 cntr += 1
         acc = acc / cntr
-        print(f"t2i top{topk} is {acc:.3f}")
+        print(f"t2i top{topk} is {acc:.4f}")
 
 def main(model_type: str, model_path: str):
     eval_mscoco(load(model_type, model_path))

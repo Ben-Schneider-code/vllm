@@ -84,7 +84,7 @@ def main():
     if model_args.instruction_mode:
         if dist.get_rank() == 0: print("Mode: instruction finetuning")
         # Only train temperature when instruction finetuning
-        modules_to_save = ["temperature"]
+        modules_to_save = None
     else:
         if dist.get_rank() == 0: print("Mode: pretraining")
         _unfreeze_params(model.mlp_head)

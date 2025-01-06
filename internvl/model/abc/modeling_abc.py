@@ -101,7 +101,7 @@ class abcInternVL(InternVLChatModel):
         return (loss, outputs) if (return_outputs or return_prediction) else loss
 
 def get_temperature_for_logging(model):
-    return model.temperature.modules_to_save.default.temp.data.clone.detach()
+    return model.temperature.modules_to_save.default.temp.data.clone().detach()
 
 class abcQwenVL(Qwen2VLForConditionalGeneration):
     

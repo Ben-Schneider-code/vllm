@@ -130,7 +130,13 @@ class abcQwenVL(Qwen2VLForConditionalGeneration):
         candidate.pop("labels", False)
 
         query_outputs : CausalLMOutputWithPast = super().forward(**query, output_hidden_states=True)
-        candidate_outputs : CausalLMOutputWithPast = super().forward(**candidate, output_hidden_states=True)
+        
+        # Use the base model to embed candidates in instruction mode
+        if self.instruction_mode:
+            with self.disable_adapter():
+                candidate_outputs : CausalLMOutputWithPast = super().forward(**candidate, output_hidden_states=True)    
+        else:
+            candidate_outputs : CausalLMOutputWithPast = super().forward(**candidate, output_hidden_states=True)
         
         # ensure logits computation was skipped for memory / speed
         # (or other LLM in used)
@@ -162,6 +168,7 @@ class abcQwenVL(Qwen2VLForConditionalGeneration):
             }
         return (loss, outputs) if (return_outputs or return_prediction) else loss
     
+    # For unsupervised embedding using a pretrained model.
     def embed(self, inputs, instruction_mask = None):
         with torch.no_grad():
             hiddens : CausalLMOutputWithPast = super().forward(**inputs, output_hidden_states=True)

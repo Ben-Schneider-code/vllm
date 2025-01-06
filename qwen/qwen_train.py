@@ -30,6 +30,8 @@ def load_model(model_args: ModelArguments, data_args: DataTrainingArguments, tra
         torch_dtype=torch.bfloat16,
         attn_implementation="flash_attention_2",
     )
+    
+    model.instruction_mode = model_args.instruction_mode
 
     if model_args.adapter:
         model = PeftModel.from_pretrained(model, model_args.adapter, is_trainable=True)
@@ -68,6 +70,10 @@ def main():
         tokenizer
     )
 
+    if model_args.grad_checkpoint:
+        model.model.gradient_checkpointing_enable()
+        model.visual.gradient_checkpointing_enable()
+
     def _freeze_params(module):
         for param in module.parameters():
             param.requires_grad = False
@@ -76,26 +82,29 @@ def main():
         for param in module.parameters():
             param.requires_grad = True
 
-    # Freeze base model weights
-    has_lora_weights = [key for key in model.state_dict().keys() if 'lora' in key.lower()]
-    if has_lora_weights: print("Has lora weight already, skipping lora init")
-    else:
-        _freeze_params(model)
-        _unfreeze_params(model.mlp_head)
-        model.temperature.requires_grad = True
+    _freeze_params(model)
 
-    if model_args.grad_checkpoint:
-        model.model.gradient_checkpointing_enable()
-        model.visual.gradient_checkpointing_enable()
+    # Freeze base model weights
+    if model_args.instruction_mode:
+        if dist.get_rank() == 0: print("Mode: instruction finetuning")
+        # Only unfreeze temperature when instruction finetuning
+        _unfreeze_params(model.temperature)
+        modules_to_save = None
+    else:
+        if dist.get_rank() == 0: print("Mode: pretraining")
+        _unfreeze_params(model.mlp_head)
+        _unfreeze_params(model.temperature)
+        modules_to_save = ["temperature","mlp_head"]
 
     target_modules = []
+
     # LoRA for LLM
-    if model_args.use_llm_lora and not has_lora_weights:
+    if model_args.use_llm_lora:
         target_modules.extend(['self_attn.q_proj', 'self_attn.k_proj', 'self_attn.v_proj', 'self_attn.o_proj',
                               'mlp.gate_proj', 'mlp.down_proj', 'mlp.up_proj'])
 
     # LoRA for vision backbone
-    if model_args.use_backbone_lora and not has_lora_weights:
+    if model_args.use_backbone_lora:
         target_modules.extend(['attn.qkv', 'attn.proj', 'mlp.fc1', 'mlp.fc2'])
         
     if len(target_modules):
@@ -105,7 +114,7 @@ def main():
             lora_alpha=2*model_args.use_llm_lora,
             lora_dropout=model_args.lora_dropout,
             use_dora=model_args.use_dora,
-            modules_to_save=["temperature","mlp_head"]
+            modules_to_save=modules_to_save
         )
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()

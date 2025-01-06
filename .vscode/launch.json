@@ -17,7 +17,24 @@
             }
         },
         {
-            "name": "Debug Eval",
+            "name": "Debug Eval Flickr",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/evaluate/eval_flickr30k.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "abcQwenVL",
+                "/home/b3schnei/output/QwenVL-8B-Large-Batch/checkpoint-3000"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0,1,2",
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
+            "name": "Debug Eval MSCOCO",
             "type": "debugpy",
             "request": "launch",
             "program": "${env:VLLM_REPO}/evaluate/eval_mscoco.py",
@@ -25,7 +42,7 @@
             "console": "integratedTerminal",
             "args": [
                 "abcQwenVL",
-                "/home/b3schnei/output/QwenVL-8B-Large-Batch"
+                "/home/b3schnei/output/QwenVL-8B-Large-Batch/checkpoint-2000"
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "0,1,2",

@@ -1,5 +1,5 @@
 # ------------
-# Evals against mscoco
+# Evals against flickr30k
 # ------------
 
 import os
@@ -53,20 +53,21 @@ def load(model_type: str, model_path: str):
     if model_type == "abcQwenVL":
         return get_model_with_embed_function(model_type, model_path)
 
-def eval_mscoco(fxn):
+def eval_flickr(fxn):
     
-    mscoco_eval_path = os.environ.get("MSCOCO_EVAL", None)
+    mscoco_eval_path = os.environ.get("FLICKR_EVAL", None)
     assert(mscoco_eval_path is not None)
     with open(mscoco_eval_path, "rb") as f:
         mscoco_json = json.loads(f.read())["images"]
 
     test = list(filter(lambda x : x["split"] == "test", mscoco_json))
 
+    filepath = "flickr30k_images"
     for x in test:
-        x["image"] = os.path.join( os.path.dirname(mscoco_eval_path),x["filepath"],x["filename"])
+        x["image"] = os.path.join( os.path.dirname(mscoco_eval_path),filepath,x["filename"])
     
     text = []
-    for i, x in enumerate(test):
+    for _, x in enumerate(test):
         text.extend(x["sentences"])
 
     images = [(i["image"],fxn(i["image"], dtype="image")) for i in tqdm(test)]
@@ -99,7 +100,7 @@ def eval_mscoco(fxn):
         print(f"t2i top{topk} is {acc:.3f}")
 
 def main(model_type: str, model_path: str):
-    eval_mscoco(load(model_type, model_path))
+    eval_flickr(load(model_type, model_path))
 
 if __name__ == "__main__":
     import sys

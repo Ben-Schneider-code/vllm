@@ -42,10 +42,6 @@ class Temperature(nn.Module):
     def forward(self, x):
         return x/(self.temp.float())
 
-    #TODO fix temperature logging
-    def get_temp(self):
-        return self.temp.data.clone()
-
 class abcInternVL(InternVLChatModel):
     
     """
@@ -93,7 +89,7 @@ class abcInternVL(InternVLChatModel):
         outputs = {}
         if return_outputs:
             outputs["accuracy"] = acc
-            outputs["temperature"] = self.temperature.get_temp()
+            outputs["temperature"] = get_temperature_for_logging(self)
             outputs["num_cand"] = num_cand
 
         if return_prediction:
@@ -103,7 +99,10 @@ class abcInternVL(InternVLChatModel):
                 "c": c_emb.detach().cpu()
             }
         return (loss, outputs) if (return_outputs or return_prediction) else loss
-    
+
+def get_temperature_for_logging(model):
+    return model.temperature.modules_to_save.default.temp.data.clone.detach()
+
 class abcQwenVL(Qwen2VLForConditionalGeneration):
     
     """
@@ -133,7 +132,7 @@ class abcQwenVL(Qwen2VLForConditionalGeneration):
         
         # Use the base model to embed candidates in instruction mode
         if self.instruction_mode:
-            with self.disable_adapter():
+            with self.get_peft_wrapper().disable_adapter():
                 candidate_outputs : CausalLMOutputWithPast = super().forward(**candidate, output_hidden_states=True)    
         else:
             candidate_outputs : CausalLMOutputWithPast = super().forward(**candidate, output_hidden_states=True)
@@ -157,7 +156,7 @@ class abcQwenVL(Qwen2VLForConditionalGeneration):
         outputs = {}
         if return_outputs:
             outputs["accuracy"] = acc
-            outputs["temperature"] = self.temperature.original_module.get_temp()
+            outputs["temperature"] = get_temperature_for_logging(self)
             outputs["num_cand"] = num_cand
 
         if return_prediction:

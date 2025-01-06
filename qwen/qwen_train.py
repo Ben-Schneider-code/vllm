@@ -70,10 +70,6 @@ def main():
         tokenizer
     )
 
-    if model_args.grad_checkpoint:
-        model.model.gradient_checkpointing_enable()
-        model.visual.gradient_checkpointing_enable()
-
     def _freeze_params(module):
         for param in module.parameters():
             param.requires_grad = False
@@ -87,14 +83,18 @@ def main():
     # Freeze base model weights
     if model_args.instruction_mode:
         if dist.get_rank() == 0: print("Mode: instruction finetuning")
-        # Only unfreeze temperature when instruction finetuning
-        _unfreeze_params(model.temperature)
-        modules_to_save = None
+        # Only train temperature when instruction finetuning
+        modules_to_save = ["temperature"]
     else:
         if dist.get_rank() == 0: print("Mode: pretraining")
         _unfreeze_params(model.mlp_head)
         _unfreeze_params(model.temperature)
+        # train and save both temperature and mlp_head
         modules_to_save = ["temperature","mlp_head"]
+
+    if model_args.grad_checkpoint:
+        model.model.gradient_checkpointing_enable()
+        model.visual.gradient_checkpointing_enable()
 
     target_modules = []
 
@@ -117,6 +117,9 @@ def main():
             modules_to_save=modules_to_save
         )
         model = get_peft_model(model, lora_config)
+
+        # set as a function so that it is not tracked by autograd
+        setattr(model.get_base_model(), "get_peft_wrapper", lambda: model)
         model.print_trainable_parameters()
 
     # print trainable parameters

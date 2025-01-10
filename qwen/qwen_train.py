@@ -106,6 +106,9 @@ def main():
     # LoRA for vision backbone
     if model_args.use_backbone_lora:
         target_modules.extend(['attn.qkv', 'attn.proj', 'mlp.fc1', 'mlp.fc2'])
+
+    if model_args.instruction_mode:
+        target_modules.extend(["linear_layer1", "linear_layer2"])
         
     if len(target_modules):
         lora_config = LoraConfig(

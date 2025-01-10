@@ -101,7 +101,10 @@ class abcInternVL(InternVLChatModel):
         return (loss, outputs) if (return_outputs or return_prediction) else loss
 
 def get_temperature_for_logging(model):
-    return model.temperature.modules_to_save.default.temp.data.clone().detach()
+    if isinstance(model.temperature, Temperature):
+        return model.temperature.temp.data.clone().detach()
+    else:
+        return model.temperature.modules_to_save.default.temp.data.clone().detach()
 
 class abcQwenVL(Qwen2VLForConditionalGeneration):
     
@@ -132,7 +135,7 @@ class abcQwenVL(Qwen2VLForConditionalGeneration):
         
         # Use the base model to embed candidates in instruction mode
         if self.instruction_mode:
-            with self.get_peft_wrapper().disable_adapter():
+            with torch.no_grad(), self.get_peft_wrapper().disable_adapter():
                 candidate_outputs : CausalLMOutputWithPast = super().forward(**candidate, output_hidden_states=True)    
         else:
             candidate_outputs : CausalLMOutputWithPast = super().forward(**candidate, output_hidden_states=True)

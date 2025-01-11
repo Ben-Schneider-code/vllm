@@ -55,7 +55,7 @@ def eval_mmeb_classification(fxn, split_name):
     mmeb_path = os.environ["MMEB_EVAL"]
     ds = load_dataset("TIGER-Lab/MMEB-eval", split_name)["test"]
     q, c = unroll_split(ds)
-tion 
+
     images = [(i["img"],fxn(os.path.join(mmeb_path,i["img"]), dtype="image")) for i in tqdm(q, disable=True)]
     text = [(i,fxn(f"A photo of {i}.", dtype="text")) for i in tqdm(c, disable=True)]
 

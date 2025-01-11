@@ -55,7 +55,7 @@ def compute_contrastive_loss(q_embeds, p_embeds, temperature, label_smoothing=0.
 
     return loss, accuracy
 
-def get_last_token_embed(input_ids, hidden_state, padding_token_id):
+def get_last_token_embed(input_ids, hidden_state, padding_token_id, instruction_mask=None):
     # Find the position of the last non-padding token for each sequence
     mask = input_ids != padding_token_id  # Create a mask where padding tokens are False
     last_token_pos = mask.sum(dim=1) - 1  # Get the index of the last non-padding token

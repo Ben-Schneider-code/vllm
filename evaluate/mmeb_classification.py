@@ -5,10 +5,11 @@
 
 import os
 import sys
+from tqdm import tqdm
 from evaluate.embed_function import get_model_with_embed_function
 from datasets import load_dataset
 supported_models = ["abcQwenVL"]
-splits = ["ImageNet-1K","ImageNet-A","ImageNet-R", "ObjectNet", "VOC2007"]
+splits = ["ImageNet-1K","HatefulMemes","VOC2007", "SUN397", "Place365", "ImageNet-A", "ImageNet-R", "ObjectNet"]
 import torch
 
 def intersect(l1, l2):
@@ -36,14 +37,43 @@ def load(model_type: str, model_path: str):
     if model_type == "abcQwenVL":
         return get_model_with_embed_function(model_type, model_path)
 
+def unroll_split(ds):
+    labels = ds[0]["tgt_text"]
+    labels_set = set(labels)
+    query = []
+
+    for item in ds:
+        target_list = item["tgt_text"]
+        query.append({"img": item["qry_img_path"], "target": target_list[0]})
+
+        # assert that we can reuse the same embeddings
+        assert set(target_list) == labels_set
+    return query, labels
+
 def eval_mmeb_classification(fxn, split_name):
 
-    print(split_name)
-    ds = load_dataset("TIGER-Lab/MMEB-eval", split_name)
-    print(ds[0])
+    mmeb_path = os.environ["MMEB_EVAL"]
+    ds = load_dataset("TIGER-Lab/MMEB-eval", split_name)["test"]
+    q, c = unroll_split(ds)
+tion 
+    images = [(i["img"],fxn(os.path.join(mmeb_path,i["img"]), dtype="image")) for i in tqdm(q, disable=True)]
+    text = [(i,fxn(f"A photo of {i}.", dtype="text")) for i in tqdm(c, disable=True)]
+
+    # i2t
+    print(f"{split_name}")
+    for topk in [1]:
+        cand = get_topk_candidates(images, text, topk)
+        acc = 0
+        for query in q:
+            targets = [query["target"]]
+            preds = cand[query["img"]]
+            if intersect(preds, targets): acc += 1
+        acc = acc / len(images)
+        print(f"i2t top{topk} is {acc:.4f}")
+
 
 def main(model_type: str, model_path: str):
-    fxn = None #load(model_type, model_path)
+    fxn = load(model_type, model_path)
     for benchmark in splits:
         eval_mmeb_classification(fxn, benchmark)
 

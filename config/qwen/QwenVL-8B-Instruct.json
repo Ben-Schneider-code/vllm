@@ -4,7 +4,7 @@
     "merge": true,
     "output_dir": "/home/b3schnei/output/QwenVL-8B-Instruct",
     "overwrite_output_dir": true,
-    "use_backbone_lora": 8,
+    "use_llm_lora": 8,
     "dataloader_num_workers": 8,
     "bf16": true,
     "num_train_epochs": 1,

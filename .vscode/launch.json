@@ -2,6 +2,24 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug MMeb VQA Eval",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/evaluate/mmeb_vqa.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "abcQwenVL-Instruct",
+                "/home/b3schnei/output/QwenVL-8B-Large-Batch",
+                "/home/b3schnei/output/QwenVL-8B-Instruct-2/checkpoint-100"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug MMeb Eval",
             "type": "debugpy",
             "request": "launch",

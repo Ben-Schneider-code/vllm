@@ -7,7 +7,7 @@ import sys
 from tqdm import tqdm
 from evaluate.embed_function import get_model_with_embed_function
 from datasets import load_dataset
-splits = ["OK-VQA", "A-OKVQA","DocVQA","InfographicVQA","ChartQA","Visual7W","ScienceQA","VizWiz","GQA","TextVQA"]
+splits = ["OK-VQA", "A-OKVQA","DocVQA","InfographicsVQA","ChartQA","Visual7W","ScienceQA","VizWiz","GQA","TextVQA"]
 import torch
 
 supported_models = ["abcQwenVL-Instruct"]

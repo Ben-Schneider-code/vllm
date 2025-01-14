@@ -292,10 +292,11 @@ def qwenvl_low_memory_forward(
         )
 
 def unmask_attn_monkey_patch():
-    transformers.models.qwen2.modeling_qwen2.QWEN2_ATTENTION_CLASSES = QWEN2_ATTENTION_UNMASKED
-    transformers.models.qwen2_vl.modeling_qwen2_vl.QWEN2_VL_ATTENTION_CLASSES = QWENVL_ATTENTION_UNMASKED
-    import internvl.model.internlm2.modeling_internlm2 as internlm2
-    internlm2.INTERNLM2_ATTENTION_CLASSES = INTERNLM2_ATTENTION_UNMASKED
+    #transformers.models.qwen2.modeling_qwen2.QWEN2_ATTENTION_CLASSES = QWEN2_ATTENTION_UNMASKED
+    #transformers.models.qwen2_vl.modeling_qwen2_vl.QWEN2_VL_ATTENTION_CLASSES = QWENVL_ATTENTION_UNMASKED
+    #import internvl.model.internlm2.modeling_internlm2 as internlm2
+    #internlm2.INTERNLM2_ATTENTION_CLASSES = INTERNLM2_ATTENTION_UNMASKED
+    print("SKIPPED ATTN UNMASK")
     
 def get_qwenvl_vision_tower_input_embeddings(self) -> torch.nn.Module:
     return self.patch_embed

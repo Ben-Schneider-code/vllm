@@ -9,7 +9,7 @@ from tqdm import tqdm
 from evaluate.embed_function import get_model_with_embed_function
 from datasets import load_dataset
 supported_models = ["abcQwenVL"]
-splits = ["ImageNet-1K", "ObjectNet", "ImageNet-A", "ImageNet-R","HatefulMemes","VOC2007", "SUN397", "Place365"]
+splits = ["ImageNet-1K", "ImageNet-A",  "ImageNet-R", "ObjectNet","Country211","HatefulMemes","VOC2007", "SUN397", "Place365"]
 import torch
 
 def intersect(l1, l2):

@@ -21,7 +21,7 @@ def _prepare_input(data):
 def get_abcQwenVL(model_type, model_path):
         monkey_patch_transformers_lib()
         unmask_attn_monkey_patch()
-        min_pixels = 128*28*28
+        min_pixels = 256*28*28
         max_pixels = 1024*28*28
         from transformers import AutoProcessor
         from internvl.model.abc.modeling_abc import abcQwenVL

@@ -42,7 +42,7 @@ class MSCOCO(Dataset):
 class MSCOCOAdapter(Dataset):
 
     def __init__(self):      
-        assert "MSCOCO_ROOT" in os.environ, "Environment variable 'CC_ROOT' is not set"
+        assert "MSCOCO_ROOT" in os.environ, "Environment variable 'MSCOCO_ROOT' is not set"
         self.base_ds = MSCOCO()
         self.root=self.base_ds.root
 

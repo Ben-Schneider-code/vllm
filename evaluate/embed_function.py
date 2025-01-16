@@ -24,7 +24,7 @@ def get_abcQwenVL(model_type, model_path):
         min_pixels = 256*28*28
         max_pixels = 1024*28*28
         from transformers import AutoProcessor
-        from internvl.model.abc.modeling_abc import abcQwenVL
+        from model.modeling_abc import abcQwenVL
      
      
         # Load base model
@@ -88,7 +88,7 @@ def get_abcQwenVL_instruct(model_type, model_path, instruct_model):
         min_pixels = 256*28*28
         max_pixels = 512*28*28
         from transformers import AutoProcessor
-        from internvl.model.abc.modeling_abc import abcQwenVL
+        from model.modeling_abc import abcQwenVL
      
      
         # Load base model

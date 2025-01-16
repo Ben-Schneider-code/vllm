@@ -37,7 +37,7 @@ from internvl.train.dataset import (build_transform,
                                     preprocess_phi3)
 
 from util.dataclass import ModelArguments, DataTrainingArguments, VLMTrainingArguments
-from internvl.model.abc.modeling_abc import MODEL_ARCHITECTURE
+from model.modeling_abc import MODEL_ARCHITECTURE
 from internvl.train.trainer_monkey_patch import replace_create_optimizer
 from PIL import Image, ImageFile, PngImagePlugin, UnidentifiedImageError
 from torch.utils.data import Dataset

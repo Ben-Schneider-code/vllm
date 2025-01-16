@@ -6,7 +6,7 @@ from util.contrastive_trainer import ContrastiveTrainer
 from util.dataclass import ModelArguments, DataTrainingArguments, VLMTrainingArguments
 from transformers import AutoProcessor
 from qwen.qwen_dataset import build_contrastive_dataset, build_eval_datasets, QwenCollate
-from internvl.model.abc.modeling_abc import MODEL_ARCHITECTURE
+from model.modeling_abc import MODEL_ARCHITECTURE
 from monkey_patch.qwen_attn_patch import monkey_patch_transformers_lib, unmask_attn_monkey_patch
 from peft import LoraConfig, get_peft_model, PeftModel
 

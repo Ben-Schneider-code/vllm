@@ -123,33 +123,24 @@ def get_abcQwenVL_instruct(model_type, model_path, instruct_model):
             conversation = None
 
             if dtype == "text":
-                
-                conv_templates = [[{
+                conversation = [{
                     "role": "user",
                     "content": [
-                        {"type": "text", "text" : i}
+                        {"type": "text", "text" : item}
                     ]
-                }] for i in item]
-
-                text_input =[ processor.apply_chat_template(
-                    i, tokenize=False, add_generation_prompt=True
-                ) for i in conv_templates]
-
-                image_inputs = None
-
+                }]
             else:
                 conversation = [{
                     "role": "user",
                     "content": [
                         {"type": "image", "image": item},
-                        {"type": "text", "text" : f"Instruction: {instruction}"}
+                        {"type": "text", "text" : ""}
                     ]
                 }]
-
-                text_input = processor.apply_chat_template(
-                    conversation, tokenize=False, add_generation_prompt=True
-                )
-                image_inputs, _ = process_vision_info(conversation)
+            text_input = processor.apply_chat_template(
+                conversation, tokenize=False, add_generation_prompt=True
+            )
+            image_inputs, _ = process_vision_info(conversation)
 
             inps = processor(
                 text=text_input,

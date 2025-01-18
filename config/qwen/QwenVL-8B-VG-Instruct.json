@@ -1,17 +1,18 @@
 {
     "model_name_or_path": "Qwen/Qwen2-VL-7B-Instruct",
-    "output_dir": "/home/b3schnei/output/QwenVL-8B-BS-32",
+    "adapter": "/home/b3schnei/output/QwenVL-8B-Large-Batch",
+    "merge": true,
+    "output_dir": "/home/b3schnei/output/QwenVL-8B-VG-Instruct",
     "overwrite_output_dir": true,
-    "use_backbone_lora": 64,
     "use_llm_lora": 64,
     "dataloader_num_workers": 8,
     "bf16": true,
     "num_train_epochs": 1,
-    "per_device_train_batch_size": 8,
+    "per_device_train_batch_size": 2,
     "gradient_accumulation_steps": 1,
     "save_strategy": "steps",
-    "save_steps": 1000000,
-    "save_total_limit": 5,
+    "save_steps": 50,
+    "save_total_limit": 100,
     "learning_rate": 4e-5,
     "weight_decay": 0.01,
     "warmup_ratio": 0.03,
@@ -26,14 +27,16 @@
     "report_to": "wandb",
     "model_architecture": "ABCQWEN",
     "eval_datasets": [
-        "cc_pretrain"
+        "cc_pretrain",
+        "mscoco_pretrain"
     ],
     "eval_steps_per_dataset": 6,
     "evaluation_strategy": "steps",
     "per_device_eval_batch_size": 200,
-    "eval_steps": 1000,
+    "eval_steps": 50,
     "negatives": 7,
-    "training_dataset_name": "cc_pretrain",
+    "instruction_mode": true,
+    "training_dataset_name": "vg-instruct",
     "max_dynamic_patch": 512,
     "min_dynamic_patch": 256
 }

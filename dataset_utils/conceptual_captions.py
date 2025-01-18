@@ -212,6 +212,14 @@ class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
 
         return formatted_item
 
+class VGInstructAdapter(Dataset):
+
+    def __init__(self):
+        assert "VG_ROOT" in os.environ, "Dataset location was not specified by env variable"
+        self.root = os.environ["VG_ROOT"]
+        
+
+
 class ConceptualCaptionsInstructionAdapter(ConceptualCaptionsPretrainAdapter):
 
     def __init__(self, negatives=None):

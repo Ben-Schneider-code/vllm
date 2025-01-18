@@ -55,16 +55,16 @@ def load(model_type: str, model_path: str):
 
 def eval_flickr(fxn):
     
-    mscoco_eval_path = os.environ.get("FLICKR_EVAL", None)
-    assert(mscoco_eval_path is not None)
-    with open(mscoco_eval_path, "rb") as f:
+    flickr_eval_path = os.environ.get("FLICKR_EVAL", None)
+    assert(flickr_eval_path is not None)
+    with open(flickr_eval_path, "rb") as f:
         mscoco_json = json.loads(f.read())["images"]
 
     test = list(filter(lambda x : x["split"] == "test", mscoco_json))
 
     filepath = "flickr30k_images"
     for x in test:
-        x["image"] = os.path.join( os.path.dirname(mscoco_eval_path),filepath,x["filename"])
+        x["image"] = os.path.join( os.path.dirname(flickr_eval_path),filepath,x["filename"])
     
     text = []
     for _, x in enumerate(test):

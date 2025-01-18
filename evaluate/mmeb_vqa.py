@@ -1,5 +1,6 @@
 # ------------
 # Evals against the mmeb vqa set
+# TODO THIS IS BROKEN
 # ------------
 
 import os

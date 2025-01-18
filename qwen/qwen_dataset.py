@@ -266,6 +266,12 @@ def build_contrastive_dataset(
                 ConceptualCaptionsInstructionAdapter(negatives=data_args.negatives if is_train else None),
                 tokenizer
         )
+    elif dataset_name == "vg-instruct":
+        dataset = QwenContrastiveDataset(
+            ConceptualCaptionsInstructionAdapter(),
+            tokenizer
+    )        
+
     elif dataset_name == "mscoco_pretrain":
             dataset = QwenContrastiveDataset(
             MSCOCOPretrainAdapter(negatives=None),

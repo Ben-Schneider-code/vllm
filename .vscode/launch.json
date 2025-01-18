@@ -2,6 +2,24 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug vg Eval",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/evaluate/eval_vg_instruct.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "abcQwenVL-Instruct",
+                "/home/b3schnei/output/QwenVL-8B-Large-Batch",
+                "/home/b3schnei/output/QwenVL-8B-Instruct-2/checkpoint-100"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "4",
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug MMeb VQA Eval",
             "type": "debugpy",
             "request": "launch",

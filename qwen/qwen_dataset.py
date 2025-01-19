@@ -2,7 +2,7 @@ import torch
 from typing import Dict
 from torch.utils.data import Dataset, Subset
 from qwen.vision_process import process_vision_info
-from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsInstructionAdapter, ConceptualCaptionsPretrainAdapter
+from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsInstructionAdapter, ConceptualCaptionsPretrainAdapter, VGEvalInstructAdapter, VGInstructAdapter
 from dataset_utils.mscoco import MSCOCOAdapter, MSCOCOInstructAdapter, MSCOCOPretrainAdapter
 from util.dataclass import DataTrainingArguments
 import os
@@ -182,6 +182,8 @@ class QwenContrastiveDataset(Dataset):
                 raise Exception("InvalidTypeError")
         except:
             # if index fails just substitute in a random one
+            #TODO remove after done debugging
+            raise Exception("ErrorWhenGettingItem")
             return self.__getitem__(random.randint(0, self.__len__()))
 
 def build_eval_datasets(
@@ -268,9 +270,14 @@ def build_contrastive_dataset(
         )
     elif dataset_name == "vg-instruct":
         dataset = QwenContrastiveDataset(
-            ConceptualCaptionsInstructionAdapter(),
+            VGInstructAdapter(),
             tokenizer
     )        
+    elif dataset_name == "vg-eval-instruct":
+        dataset = QwenContrastiveDataset(
+            VGEvalInstructAdapter(),
+            tokenizer
+    )  
 
     elif dataset_name == "mscoco_pretrain":
             dataset = QwenContrastiveDataset(

@@ -177,6 +177,18 @@ class abcQwenVL(Qwen2VLForConditionalGeneration):
             averaged_hiddens = get_mean_token_embed(inputs["input_ids"], hiddens.hidden_states[-1], 0, instruction_mask=instruction_mask)
             proj = self.mlp_head(averaged_hiddens).float()
             return F.normalize(proj, dim=-1).detach()
+        
+    def inst_embed(self, inputs, is_cand):
+        with torch.no_grad():
+            if is_cand:
+                with self.get_peft_wrapper().disable_adapter():
+                    hiddens : CausalLMOutputWithPast = super().forward(**inputs, output_hidden_states=True)
+            else:
+                hiddens : CausalLMOutputWithPast = super().forward(**inputs, output_hidden_states=True)
+                
+            averaged_hiddens = get_mean_token_embed(inputs["input_ids"], hiddens.hidden_states[-1], 0, instruction_mask=None)
+            proj = self.mlp_head(averaged_hiddens).float()
+            return F.normalize(proj, dim=-1).detach()
 
 class abcQwenVLLT(Qwen2VLForConditionalGeneration):
     

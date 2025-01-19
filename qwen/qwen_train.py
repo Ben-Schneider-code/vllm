@@ -2,6 +2,7 @@ import torch
 import torch.distributed as dist
 import os, sys, logging
 from transformers import set_seed, HfArgumentParser
+from evaluate.embed_function import get_abcQwenVL_instruct_model
 from util.contrastive_trainer import ContrastiveTrainer
 from util.dataclass import ModelArguments, DataTrainingArguments, VLMTrainingArguments
 from transformers import AutoProcessor
@@ -106,9 +107,6 @@ def main():
     # LoRA for vision backbone
     if model_args.use_backbone_lora:
         target_modules.extend(['attn.qkv', 'attn.proj', 'mlp.fc1', 'mlp.fc2'])
-
-    if model_args.instruction_mode:
-        target_modules.extend(["linear_layer1", "linear_layer2"])
         
     if len(target_modules):
         lora_config = LoraConfig(
@@ -163,6 +161,8 @@ def main():
         trainer.log_metrics('train', metrics)
         trainer.save_metrics('train', metrics)
         trainer.save_state()
+
+    loaded_model = get_abcQwenVL_instruct_model()
 
 if __name__ == '__main__':
     main()

@@ -82,33 +82,36 @@ def get_abcQwenVL(model_type, model_path):
             return output.cpu()
         return functools.partial(embed, model, processor)    
 
-def get_abcQwenVL_instruct(model_type, model_path, instruct_model):
-        monkey_patch_transformers_lib()
-        unmask_attn_monkey_patch()
-        min_pixels = 256*28*28
-        max_pixels = 512*28*28
-        from transformers import AutoProcessor
+def get_abcQwenVL_instruct_model(model_type, model_path, instruct_model):
         from model.modeling_abc import abcQwenVL
-     
-     
-        # Load base model
         base_model = abcQwenVL.from_pretrained(
         "Qwen/Qwen2-VL-7B-Instruct",
         torch_dtype=torch.bfloat16,
         attn_implementation="flash_attention_2",
         )
         
+        base_model.instruction_mode = True
+
         # Load and merge pretrain adapter
         pretrained_model = PeftModel.from_pretrained(base_model, model_path)
         pretrained_model = pretrained_model.merge_and_unload()
 
         # Load instruction model
-        pretrained_model.instruction_mode = True
-        model = PeftModel.from_pretrained(pretrained_model, instruct_model)
+        model = PeftModel.from_pretrained(pretrained_model, instruct_model, adapter_name="instruct")
         
-        # The forward method needs to be able to toggle LoR
+        # The forward method needs to be able to toggle LoRA
         setattr(model.get_base_model(), "get_peft_wrapper", lambda: model)
         model.to(torch.bfloat16).cuda()
+        return model
+
+def get_abcQwenVL_instruct(model_type, model_path, instruct_model):
+        monkey_patch_transformers_lib()
+        unmask_attn_monkey_patch()
+        min_pixels = 256*28*28
+        max_pixels = 512*28*28
+        from transformers import AutoProcessor
+        
+        model = get_abcQwenVL_instruct_model(model_type, model_path, instruct_model)
 
         processor = AutoProcessor.from_pretrained(model_path,
                                                     padding_side="right",
@@ -134,7 +137,7 @@ def get_abcQwenVL_instruct(model_type, model_path, instruct_model):
                     "role": "user",
                     "content": [
                         {"type": "image", "image": item},
-                        {"type": "text", "text" : ""}
+                        {"type": "text", "text" : f"Instruction: {instruction}"}
                     ]
                 }]
             text_input = processor.apply_chat_template(
@@ -150,7 +153,8 @@ def get_abcQwenVL_instruct(model_type, model_path, instruct_model):
             )
 
             inps = _prepare_input(inps)
-            output = model.embed(inps)
+
+            output = model.inst_embed(inps, dtype=="text")
             return output.cpu()
         print("\nLoad instruction version of model\n")
         return functools.partial(embed, model, processor)   

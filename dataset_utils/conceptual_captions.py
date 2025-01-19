@@ -212,13 +212,81 @@ class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
 
         return formatted_item
 
+def format_cand(txt):
+    return {
+                "id": "nil",
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": txt
+
+                    },
+                    {
+                        "from": "gpt",
+                        "value": ""
+                    }
+                ]
+    }
+
+def format_inst_query(img_path, inst):
+    return {
+                "id": "nil",
+                "image": img_path,
+                "conversations": [
+                    {
+                        "from": "human",
+                        "value": f"Instruction: {inst}"
+                    },
+                    {
+                        "from": "gpt",
+                        "value": ""
+                    }
+                ]
+            }
+
 class VGInstructAdapter(Dataset):
 
     def __init__(self):
         assert "VG_ROOT" in os.environ, "Dataset location was not specified by env variable"
         self.root = os.environ["VG_ROOT"]
-        
+        with open(os.path.join(self.root, "dataset.json")) as f:
+            self.ds_defintion = orjson.loads(f.read())
 
+    def __len__(self):
+        return len(self.ds_defintion)
+
+    def __getitem__(self, idx):
+        
+        items = self.ds_defintion[idx]
+
+        return [{
+            "id": str(i["id"]),
+            "url": "nil", 
+            "pos_cand": format_cand(i["phrase"]),
+            "query": format_inst_query(os.path.join(self.root, "VG_100K", f"{i["image"]}.jpg"), i["instruction"])
+        } for i in items]
+    
+class VGEvalInstructAdapter(Dataset):
+
+    def __init__(self):
+        assert "VG_ROOT" in os.environ, "Dataset location was not specified by env variable"
+        self.root = os.environ["VG_ROOT"]
+        with open(os.path.join(self.root, "eval_dataset.json")) as f:
+            self.ds_defintion = orjson.loads(f.read())
+
+    def __len__(self):
+        return len(self.ds_defintion)
+
+    def __getitem__(self, idx):
+        
+        items = self.ds_defintion[idx]
+
+        return [{
+            "id": str(i["id"]),
+            "url": "nil", 
+            "pos_cand": format_cand(i["phrase"]),
+            "query": format_inst_query(os.path.join(self.root, "VG_100K", f"{i["image"]}.jpg"), i["instruction"])
+        } for i in items]
 
 class ConceptualCaptionsInstructionAdapter(ConceptualCaptionsPretrainAdapter):
 

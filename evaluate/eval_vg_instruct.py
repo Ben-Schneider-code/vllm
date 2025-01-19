@@ -44,23 +44,19 @@ def eval_vg_instruct(fxn):
     
     ds_json = [item for sublist in ds_json for item in sublist]
 
-    #assert len([i["phrase"] for i in ds_json]) == len(set([i["phrase"] for i in ds_json]))
-    
-    ds_json = ds_json[:100]
-
     def get_any_caption_for_img():
         d = {}
 
         for i in ds_json:
             im = i['image']
-            key = f"{i["image"]}.jpg"
+            key = f"{i["image"]}.jpg_id_{i["id"]}"
             target = list(filter(lambda x: x["image"] == im,ds_json))
             d[key] = [str(i["id"]) for i in target]
         return d
     
     any_caption = get_any_caption_for_img()
 
-    images = [( f"{i["image"]}.jpg", fxn( os.path.join(eval_path,"images",f"{i["image"]}.jpg"), dtype="image", instruction=i["instruction"]), f"Instruction: {i["instruction"]}", f"Answer: {i["phrase"]}",i["image"]) for i in tqdm(ds_json)]
+    images = [( f"{i["image"]}.jpg_id_{i["id"]}", fxn( os.path.join(eval_path,"images",f"{i["image"]}.jpg"), dtype="image", instruction=i["instruction"]), f"Instruction: {i["instruction"]}", f"Answer: {i["phrase"]}",i["image"]) for i in tqdm(ds_json)]
     text = [(str(i["id"]),fxn(i["phrase"], dtype="text"), i["phrase"]) for i in tqdm(ds_json)]
 
     # i2t

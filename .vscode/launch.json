@@ -11,7 +11,7 @@
             "args": [
                 "abcQwenVL-Instruct",
                 "/home/b3schnei/output/QwenVL-8B-Large-Batch",
-                "/home/b3schnei/output/QwenVL-8B-VG2-Instruct"
+                "/home/b3schnei/output/QwenVL-8B-VG2-Instruct/checkpoint-391"
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "4",
@@ -148,15 +148,14 @@
             "console": "integratedTerminal",
             "args": [
                 "--include",
-                "localhost:0",
+                "localhost:0,1,2,3",
                 "--master_port",
                 "44000",
                 "${env:VLLM_REPO}/qwen/qwen_train.py",
-                "${env:VLLM_REPO}/config/qwen/QwenVL-8B-VG-Instruct.json"
+                "${env:VLLM_REPO}/config/qwen/QwenVL-8B-VG2-Instruct.json"
             ],
             "env": {
                 "PYTHONPATH": "${env:VLLM_REPO}",
-                "WANDB_MODE": "offline"
             }
         },
         {

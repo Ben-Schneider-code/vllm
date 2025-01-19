@@ -2,7 +2,6 @@ import torch
 import torch.distributed as dist
 import os, sys, logging
 from transformers import set_seed, HfArgumentParser
-from evaluate.embed_function import get_abcQwenVL_instruct_model
 from util.contrastive_trainer import ContrastiveTrainer
 from util.dataclass import ModelArguments, DataTrainingArguments, VLMTrainingArguments
 from transformers import AutoProcessor
@@ -162,7 +161,6 @@ def main():
         trainer.save_metrics('train', metrics)
         trainer.save_state()
 
-    loaded_model = get_abcQwenVL_instruct_model()
 
 if __name__ == '__main__':
     main()

@@ -11,7 +11,7 @@
             "args": [
                 "abcQwenVL-Instruct",
                 "/home/b3schnei/output/QwenVL-8B-Large-Batch",
-                "/home/b3schnei/output/QwenVL-8B-VG2-Instruct/checkpoint-391"
+                "/home/b3schnei/output/QwenVL-8B-VG-Instruct"
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "4",

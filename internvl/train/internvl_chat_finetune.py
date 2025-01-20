@@ -657,7 +657,7 @@ def build_contrastive_dataset(
             )
     elif dataset_name == "cc_pretrain":
                 dataset = ContrastiveDataset(
-                get_split(ConceptualCaptionsPretrainAdapter(negatives=data_args.negatives if is_train else None), pretrain=True),
+                ConceptualCaptionsPretrainAdapter(negatives=data_args.negatives if is_train else None),
                 data_args.conv_style,
                 None,
                 tokenizer,

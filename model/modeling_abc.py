@@ -1,5 +1,5 @@
 from internvl.model.internvl_chat.modeling_internvl_chat import InternVLChatModel
-from transformers import Qwen2VLForConditionalGeneration
+from transformers import Qwen2VLForConditionalGeneration, LlavaNextForConditionalGeneration
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from .abc_util import *
 from torch import nn
@@ -190,7 +190,7 @@ class abcQwenVL(Qwen2VLForConditionalGeneration):
             proj = self.mlp_head(averaged_hiddens).float()
             return F.normalize(proj, dim=-1).detach()
 
-class abcQwenVLLT(Qwen2VLForConditionalGeneration):
+class abcLLavaNext(LlavaNextForConditionalGeneration):
     
     """
     Added scaling to the contrastive loss and optimize the scaling param.
@@ -229,8 +229,8 @@ class abcQwenVLLT(Qwen2VLForConditionalGeneration):
         assert(query_outputs.logits is None)
         assert(candidate_outputs.logits is None)
 
-        q_eos_token_emb = get_last_token_embed(query["input_ids"], query_outputs.hidden_states[-1], 0, instruction_mask=instruction_mask)
-        c_eos_token_emb= get_last_token_embed(candidate["input_ids"], candidate_outputs.hidden_states[-1], 0)
+        q_eos_token_emb = get_mean_token_embed(query["input_ids"], query_outputs.hidden_states[-1], 0, instruction_mask=instruction_mask)
+        c_eos_token_emb= get_mean_token_embed(candidate["input_ids"], candidate_outputs.hidden_states[-1], 0)
         
         q_emb = self.mlp_head(q_eos_token_emb).float()
         c_emb = self.mlp_head(c_eos_token_emb).float()
@@ -258,13 +258,24 @@ class abcQwenVLLT(Qwen2VLForConditionalGeneration):
     def embed(self, inputs, instruction_mask = None):
         with torch.no_grad():
             hiddens : CausalLMOutputWithPast = super().forward(**inputs, output_hidden_states=True)
-            averaged_hiddens = get_last_token_embed(inputs["input_ids"], hiddens.hidden_states[-1], 0, instruction_mask=instruction_mask)
+            averaged_hiddens = get_mean_token_embed(inputs["input_ids"], hiddens.hidden_states[-1], 0, instruction_mask=instruction_mask)
             proj = self.mlp_head(averaged_hiddens).float()
             return F.normalize(proj, dim=-1).detach()
-
+        
+    def inst_embed(self, inputs, is_cand):
+        with torch.no_grad():
+            if is_cand:
+                with self.get_peft_wrapper().disable_adapter():
+                    hiddens : CausalLMOutputWithPast = super().forward(**inputs, output_hidden_states=True)
+            else:
+                hiddens : CausalLMOutputWithPast = super().forward(**inputs, output_hidden_states=True)
+                
+            averaged_hiddens = get_mean_token_embed(inputs["input_ids"], hiddens.hidden_states[-1], 0, instruction_mask=None)
+            proj = self.mlp_head(averaged_hiddens).float()
+            return F.normalize(proj, dim=-1).detach()
 
 MODEL_ARCHITECTURE = {
     "IVLMLPLG": abcInternVL,
     "ABCQWEN": abcQwenVL,
-    "ABCQWEN_LT" : abcQwenVLLT
+    "ABCLLAVA" : abcLLavaNext
  }

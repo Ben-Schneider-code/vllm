@@ -5,7 +5,7 @@ from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsA
 from dataset_utils.mscoco import MSCOCOAdapter, MSCOCOInstructAdapter, MSCOCOPretrainAdapter
 from util.dataclass import DataTrainingArguments
 import os
-import random
+from PIL import Image
 
 class LLavaCollate:
 
@@ -144,7 +144,7 @@ class LLavaContrastiveDataset(Dataset):
         
         return formatted_conversation
 
-    def tokenize_input(self, messages):
+    def format_conversation(self, messages):
         
         if messages["conversations"][-1] == {"from" : "gpt", "value": ""}:
             del messages["conversations"][-1]
@@ -155,22 +155,25 @@ class LLavaContrastiveDataset(Dataset):
             formatted_conversation, tokenize=False, add_generation_prompt=True
         )
                 
-        if isinstance(image_inputs, list):
-             image_inputs = image_inputs[0]
-
-        return text_input, image_inputs
+        image_input = (
+            Image.open(os.path.join(self.root, messages["image"])) 
+            if messages.get("image") 
+            else None
+        )
+        
+        return text_input, image_input
 
     def process_input(self, data_item):
         query = data_item["query"]
         cand = data_item["pos_cand"]
-        data_item["query_tokenized"] = self.tokenize_input(query)
-        data_item["cand_tokenized"] = self.tokenize_input(cand)
+        data_item["query_tokenized"] = self.format_conversation(query)
+        data_item["cand_tokenized"] = self.format_conversation(cand)
         if "negatives" in data_item:
-            data_item["negatives_tokenized"] = [self.tokenize_input(n) for n in data_item["negatives"]]
+            data_item["negatives_tokenized"] = [self.format_conversation(n) for n in data_item["negatives"]]
         return data_item
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
-        try:
+        #try:
             data_item = self.adapter[i]
             if isinstance(data_item, dict):
                 return self.process_input(data_item)
@@ -178,8 +181,8 @@ class LLavaContrastiveDataset(Dataset):
                 return [self.process_input(item) for item in data_item]
             else:
                 raise Exception("InvalidTypeError")
-        except:
-            return self.__getitem__(random.randint(0, self.__len__()))
+        #except:
+        #    return self.__getitem__(random.randint(0, self.__len__()))
 
 def build_eval_datasets(
     eval_batch_size: int,

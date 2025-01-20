@@ -204,7 +204,7 @@ class abcLLavaNext(LlavaNextForConditionalGeneration):
 
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
-        self.mlp_head = MLP(config.hidden_size, hidden_size=4096)
+        self.mlp_head = MLP(4096, hidden_size=4096)
         self.temperature = Temperature()
         
     def forward(self, inputs, return_outputs=False, return_prediction=False):

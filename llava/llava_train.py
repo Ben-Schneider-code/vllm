@@ -93,8 +93,8 @@ def main():
         modules_to_save = ["temperature","mlp_head"]
 
     if model_args.grad_checkpoint:
-        model.model.gradient_checkpointing_enable()
-        model.visual.gradient_checkpointing_enable()
+        model.language_model.gradient_checkpointing_enable()
+        model.vision_tower.gradient_checkpointing_enable()
 
     target_modules = []
 

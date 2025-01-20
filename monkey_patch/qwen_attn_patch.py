@@ -468,7 +468,7 @@ def monkey_patch_transformers_lib():
     """
 
     from transformers.models.llava_next.modeling_llava_next import LlavaNextForConditionalGeneration
-    LlavaNextCausalLMOutputWithPast.forward = llava_low_mem_forward
+    LlavaNextForConditionalGeneration.forward = llava_low_mem_forward
     from transformers.models.qwen2.modeling_qwen2 import Qwen2ForCausalLM
     Qwen2ForCausalLM.forward = qwen2_forward_low_memory
     from transformers.models.qwen2_vl.modeling_qwen2_vl import Qwen2VLForConditionalGeneration

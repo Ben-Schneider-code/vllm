@@ -181,9 +181,6 @@ class QwenContrastiveDataset(Dataset):
             else:
                 raise Exception("InvalidTypeError")
         except:
-            # if index fails just substitute in a random one
-            #TODO remove after done debugging
-            raise Exception("ErrorWhenGettingItem")
             return self.__getitem__(random.randint(0, self.__len__()))
 
 def build_eval_datasets(

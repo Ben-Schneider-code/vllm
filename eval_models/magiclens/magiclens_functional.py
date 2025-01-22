@@ -68,7 +68,6 @@ def magiclens_embed_function():
 
     def embed(model, model_params, tokenizer,  item: str = "", dtype: str = "text", instruction=""):
         assert dtype in ["image", "text"]
-
         if dtype == "image":
             qtokens, qimages = process_query_example(tokenizer, instruction, item)
             jax_embeds = model.apply(model_params, {"ids": qtokens, "image": qimages})[
@@ -79,7 +78,9 @@ def magiclens_embed_function():
             jax_embeds = model.apply(model_params, {"ids": qtokens})[
             "multimodal_embed_norm"
             ]
-        
+
+
+
         np_arr = np.array(jax_embeds)
         tensor = torch.tensor(np_arr)
         return tensor

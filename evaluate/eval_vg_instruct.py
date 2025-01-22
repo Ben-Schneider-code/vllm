@@ -39,7 +39,7 @@ def eval_vg_instruct(fxn):
     
     eval_path = os.environ.get("VG_EVAL", None)
     assert(eval_path is not None)
-    with open(os.path.join(eval_path, "ctrlbench_dataset.json"), "rb") as f:
+    with open(os.path.join(eval_path, "ctrl_bench_2.json"), "rb") as f:
         ds_json = json.loads(f.read())
 
     #ds_json = ds_json[:30]

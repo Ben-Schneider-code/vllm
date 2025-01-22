@@ -1,5 +1,5 @@
 {
-    "model_name_or_path": "/home/b3schnei/pretrained/InternVL2-8B",
+    "model_name_or_path": "OpenGVLab/InternVL2-8B",
     "conv_style": "Hermes-2",
     "output_dir": "/home/b3schnei/output/InternVL-Backbone",
     "meta_path": "./shell/data/internvl_1_2_finetune_custom.json",

@@ -26,7 +26,6 @@ from internvl.train.constants import (CLIP_MEAN, CLIP_STD, IMAGENET_MEAN, IMAGEN
                         SIGLIP_MEAN, SIGLIP_STD)
 import sys
 
-
 def get_frame_indices(num_frames, vlen, sample='rand', fix_start=None, input_fps=1, max_num_frames=-1):
     if sample in ['rand', 'middle']: # uniform sampling
         acc_samples = min(num_frames, vlen)

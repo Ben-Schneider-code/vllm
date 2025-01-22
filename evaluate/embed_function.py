@@ -2,9 +2,8 @@ import torch
 from monkey_patch.qwen_attn_patch import monkey_patch_transformers_lib, unmask_attn_monkey_patch
 from qwen.vision_process import process_vision_info
 import functools
-from peft import LoraConfig, get_peft_model, PeftModel
+from peft import PeftModel
 from collections.abc import Mapping
-from eval_models.VLM2Vec.scripts.llava_next.vlm2vec_functional import vlm2vec_embed_function
 
 def _prepare_input(data):
     """
@@ -166,6 +165,10 @@ def get_model_with_embed_function(model_type, pretrain_model_path, instruct_mode
     elif model_type == "abcQwenVL-Instruct":
         return get_abcQwenVL_instruct(model_type, pretrain_model_path, instruct_model_path)
     elif model_type == "vlm2vec":
+        from eval_models.VLM2Vec.scripts.vlm2vec_functional import vlm2vec_embed_function
         return vlm2vec_embed_function()
+    elif model_type == "magiclens":
+        from eval_models.magiclens.magiclens_functional import magiclens_embed_function
+        return magiclens_embed_function()
     else:
         raise Exception("NotImplementedError")

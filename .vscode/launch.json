@@ -10,13 +10,31 @@
             "console": "integratedTerminal",
             "args": [
                 "--include",
-                "localhost:4",
+                "localhost:6,7",
                 "--master_port",
                 "44035",
                 "${env:VLLM_REPO}/llava/llava_train.py",
                 "${env:VLLM_REPO}/config/backbone_ablation/LLavaNext-Backbone.json"
             ],
             "env": {
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
+            "name": "Debug MagicLens vg Eval",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/evaluate/eval_vg_instruct.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "magiclens",
+                "nil",
+                "nil2"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "7",
                 "PYTHONPATH": "${env:VLLM_REPO}",
                 "WANDB_MODE": "offline"
             }
@@ -34,7 +52,7 @@
                 "nil2"
             ],
             "env": {
-                "CUDA_VISIBLE_DEVICES": "4",
+                "CUDA_VISIBLE_DEVICES": "7",
                 "PYTHONPATH": "${env:VLLM_REPO}",
                 "WANDB_MODE": "offline"
             }

@@ -41,26 +41,13 @@ def eval_vg_instruct(fxn):
     assert(eval_path is not None)
     with open(os.path.join(eval_path, "ctrlbench_dataset.json"), "rb") as f:
         ds_json = json.loads(f.read())
-    
-    #ds_json = ds_json[:500]
 
+    #ds_json = ds_json[:30]
     ds_json = [item for sublist in ds_json for item in sublist]
-    
-    def get_any_caption_for_img():
-        d = {}
 
-        for i in ds_json:
-            im = i['image']
-            key = f"{i["image"]}.jpg_id_{i["id"]}"
-            target = list(filter(lambda x: x["image"] == im,ds_json))
-            d[key] = [str(i["id"]) for i in target]
-        return d
-    
-    any_caption = get_any_caption_for_img()
-
-    images = [( f"{i["image"]}.jpg_id_{i["id"]}", fxn( os.path.join(eval_path,"images",f"{i["image"]}.jpg"), dtype="image", instruction=i["instruction"]), f"Instruction: {i["instruction"]}", f"Answer: {i["phrase"]}",i["image"]) for i in tqdm(ds_json)]
     text = [(str(i["id"]),fxn(i["phrase"], dtype="text"), i["phrase"]) for i in tqdm(ds_json)]
-
+    images = [( f"{i["image"]}.jpg_id_{i["id"]}", fxn( os.path.join(eval_path,"images",f"{i["image"]}.jpg"), dtype="image", instruction=i["instruction"]), f"Instruction: {i["instruction"]}", f"Answer: {i["phrase"]}",i["image"]) for i in tqdm(ds_json)]
+    
     # i2t
     for topk in [1,5,10]:
 
@@ -70,56 +57,15 @@ def eval_vg_instruct(fxn):
         cand = get_topk_candidates(im, t, topk)
         acc = 0
 
-        # P(select correct caption version | select correct set of captions)
-        numerator = 0
-        denom = 0
-
         for x, y in zip(images, text):
             targets = [y[0]]
             preds = cand[x[0]]
-            any_target = any_caption[x[0]]
-
-            if intersect(preds, any_target):
-                denom += 1
-                if intersect(preds, targets):
-                    numerator += 1
 
             if intersect(preds, targets): acc += 1
-        acc = acc / len(images)
-        print(f"i2t top{topk} is {acc:.4f} the prob of selecting corr instruction given in set is {numerator/denom:.4f}")
-
-    for topk in [1,5,10]:
-
-        im = [(i[0], i[1]) for i in images]
-        t = [(i[0], i[1]) for i in text]
-
-        cand = get_topk_candidates(im, t, topk)
-        acc = 0
-        for x, y in zip(images, text):
-            orig_target = y[0]
-            targets = any_caption[x[0]]
-            assert orig_target in targets
-            preds = cand[x[0]]
-            if intersect(preds, targets): acc += 1
-            else:
-                fail=1
         acc = acc / len(images)
         print(f"i2t top{topk} is {acc:.4f}")
-
-    # # t2i
-    # for topk in [1,5,10]:
-    #     cand = get_topk_candidates(text, images, topk)
-    #     acc = 0
-    #     cntr = 0
-    #     # each image has multiple associated text descriptions
-    #     for x in test:
-    #         for t in x["sentences"]:
-    #             targets = [x["image"]]
-    #             preds = cand[t["raw"]]
-    #             if intersect(preds, targets): acc += 1
-    #             cntr += 1
-    #     acc = acc / cntr
-    #     print(f"t2i top{topk} is {acc:.4f}")
+         
+        
 
 def main(model_type: str, pretrain_model_path: str, instruct_model_path: str):
     fxn = load(model_type, pretrain_model_path, instruct_model_path)

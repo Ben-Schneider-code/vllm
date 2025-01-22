@@ -11,51 +11,58 @@ class LLavaCollate:
 
     def __init__(self, processor):
         self.processor = processor
+        self.last_batch = None
 
     def __call__(self, features):
+        try:
+            # flatten list of lists
+            if isinstance(features[0], list):
+                features = [item for sublist in features for item in sublist]
+            
+            query_batch = [item["query_tokenized"] for item in features]
+            cand_batch = [item["cand_tokenized"] for item in features]
 
-        # flatten list of lists
-        if isinstance(features[0], list):
-            features = [item for sublist in features for item in sublist]
-        
-        query_batch = [item["query_tokenized"] for item in features]
-        cand_batch = [item["cand_tokenized"] for item in features]
+            for item in features:
+                if 'negatives_tokenized' in item:
+                    cand_batch.extend(item["negatives_tokenized"])
+            
+            query_text, query_img = unzip(query_batch)
+            cand_text, _ = unzip(cand_batch)
 
-        for item in features:
-            if 'negatives_tokenized' in item:
-                cand_batch.extend(item["negatives_tokenized"])
-        
-        query_text, query_img = unzip(query_batch)
-        cand_text, _ = unzip(cand_batch)
+            # attach metadata to batch
+            meta = [{
+                    "qid" : item["query"]["id"],
+                    "q_image" : item["query"]["image"]  if "image" in item["query"] else None,
+                    "pid" : item["pos_cand"]["id"],
+                    "p_image" : item["pos_cand"]["image"] if "image" in item["pos_cand"] else None,
+                    "q_conversation" : item["query"]["conversations"],
+                    "p_conversation" : item["pos_cand"]["conversations"],
+                    } for item in features]
 
-        # attach metadata to batch
-        meta = [{
-                "qid" : item["query"]["id"],
-                "q_image" : item["query"]["image"]  if "image" in item["query"] else None,
-                "pid" : item["pos_cand"]["id"],
-                "p_image" : item["pos_cand"]["image"] if "image" in item["pos_cand"] else None,
-                "q_conversation" : item["query"]["conversations"],
-                "p_conversation" : item["pos_cand"]["conversations"],
-                } for item in features]
+            query_batch =  self.processor(
+            text=query_text,
+            images=query_img,
+            padding=True,
+            return_tensors="pt",
+            )
 
-        query_batch =  self.processor(
-        text=query_text,
-        images=query_img,
-        padding=True,
-        return_tensors="pt",
-        )
+            cand_batch = self.processor(
+            text=cand_text,
+            padding=True,
+            return_tensors="pt",
+            )
 
-        cand_batch = self.processor(
-        text=cand_text,
-        padding=True,
-        return_tensors="pt",
-        )
+            output_batch = {
+                "query" : query_batch,
+                "pos_cand": cand_batch,
+                "meta": meta,
+            }
+        except:
+            # if an error is thrown during collate, replay the last batch
+            output_batch = self.last_batch
 
-        return {
-            "query" : query_batch,
-            "pos_cand": cand_batch,
-            "meta": meta,
-        }
+        self.last_batch = output_batch
+        return output_batch
 
 def unzip(tuples_list):
     list1, list2 = zip(*tuples_list)

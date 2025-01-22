@@ -22,6 +22,24 @@
             }
         },
         {
+            "name": "Debug VLM2VEC vg Eval",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/evaluate/eval_vg_instruct.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "vlm2vec",
+                "nil",
+                "nil2"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "4",
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug vg Eval",
             "type": "debugpy",
             "request": "launch",

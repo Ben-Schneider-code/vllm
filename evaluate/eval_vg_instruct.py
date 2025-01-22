@@ -39,11 +39,13 @@ def eval_vg_instruct(fxn):
     
     eval_path = os.environ.get("VG_EVAL", None)
     assert(eval_path is not None)
-    with open(os.path.join(eval_path, "eval_dataset.json"), "rb") as f:
+    with open(os.path.join(eval_path, "ctrlbench_dataset.json"), "rb") as f:
         ds_json = json.loads(f.read())
     
-    ds_json = [item for sublist in ds_json for item in sublist]
+    #ds_json = ds_json[:500]
 
+    ds_json = [item for sublist in ds_json for item in sublist]
+    
     def get_any_caption_for_img():
         d = {}
 

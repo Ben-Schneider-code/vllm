@@ -2,6 +2,24 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug uniir vg Eval",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/evaluate/eval_vg_instruct.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "uniir",
+                "nil",
+                "nil2"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "7",
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Debug DeepSpeed LLava",
             "type": "debugpy",
             "request": "launch",

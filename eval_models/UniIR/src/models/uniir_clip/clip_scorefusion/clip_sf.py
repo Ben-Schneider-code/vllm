@@ -50,7 +50,7 @@ class CLIPScoreFusion(nn.Module):
         fused_emb = img_emb + txt_emb
         return fused_emb
 
-    def encode_multimodal_input(self, txt_tensor, img_tensor, txt_mask, img_mask):
+    def encode_multimodal_input(self, txt_tensor, img_tensor):
         """
         :param txt_tensor:
         :param img_tensor:
@@ -58,8 +58,8 @@ class CLIPScoreFusion(nn.Module):
         :param img_mask:  expected shape: [batch_size, 1]
         :return:
         """
-        txt_emb = self.encode_text(txt_tensor) * txt_mask.unsqueeze(-1)
-        img_emb = self.encode_image(img_tensor) * img_mask.unsqueeze(-1)
+        txt_emb = self.encode_text(txt_tensor)
+        img_emb = self.encode_image(img_tensor) 
         return self.fuse_embeddings(txt_emb, img_emb)  # shape: [batch_size, embed_dim]
 
     def get_logit_scale(self):

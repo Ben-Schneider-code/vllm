@@ -170,5 +170,8 @@ def get_model_with_embed_function(model_type, pretrain_model_path, instruct_mode
     elif model_type == "magiclens":
         from eval_models.magiclens.magiclens_functional import magiclens_embed_function
         return magiclens_embed_function()
+    elif model_type == "uniir":
+        from eval_models.UniIR.src.models.uniir_clip.clip_scorefusion.uniir_functional import uniir_embed_function
+        return uniir_embed_function()
     else:
         raise Exception("NotImplementedError")

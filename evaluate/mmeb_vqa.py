@@ -34,8 +34,8 @@ def get_topk_candidates(queries, candidates, k=3):
 
     return results
 
-def load(model_type, pretrain_model_path, instruct_model_path):
-    return get_model_with_embed_function(model_type, pretrain_model_path, instruct_model_path=instruct_model_path)
+def load(model_type, pretrain_model_path, instruct_model_path, batch=False):
+    return get_model_with_embed_function(model_type, pretrain_model_path, instruct_model_path=instruct_model_path,batch=batch)
 
 def unroll_split(ds):
     labels = []
@@ -60,7 +60,7 @@ def eval_mmeb_classification(fxn, split_name):
     ds = load_dataset("TIGER-Lab/MMEB-eval", split_name)["test"]
     q, c = unroll_split(ds)
 
-    images = [(i["img"],fxn(os.path.join(mmeb_path,i["img"]), dtype="image", instruction=i["instruction"])) for i in tqdm(q)]
+    
     
     text = []
     for item in tqdm(c):
@@ -68,6 +68,7 @@ def eval_mmeb_classification(fxn, split_name):
         emb_batch = fxn(batch, dtype="text")
         text.append([(item, emb_batch[ind, :]) for (ind, item) in enumerate(item)])
     
+    images = [(i["img"],fxn(os.path.join(mmeb_path,i["img"]), dtype="image", instruction=i["instruction"])) for i in tqdm(q)]
 
     # i2t
     print(f"{split_name}")
@@ -86,7 +87,7 @@ def eval_mmeb_classification(fxn, split_name):
 
 
 def main(model_type: str, pretrain_model_path: str, instruct_model_path: str):
-    fxn = load(model_type, pretrain_model_path, instruct_model_path)
+    fxn = load(model_type, pretrain_model_path, instruct_model_path, batch=True)
     for benchmark in splits:
         eval_mmeb_classification(fxn, benchmark)
 

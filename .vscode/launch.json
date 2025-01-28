@@ -120,8 +120,8 @@
             "console": "integratedTerminal",
             "args": [
                 "abcQwenVL-Instruct",
-                "/home/b3schnei/output/QwenVL-8B-Large-Batch",
-                "/home/b3schnei/output/QwenVL-8B-Instruct-2/checkpoint-100"
+                "/home/b3schnei/output/QwenVL-8B-Large-Batch/checkpoint-2000",
+                "/home/b3schnei/output/QwenVL-8B-Instruct-Large/checkpoint-100"
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "0",

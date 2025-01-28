@@ -261,11 +261,6 @@ def build_contrastive_dataset(
                 tokenizer
             )
     elif dataset_name == "instruct":
-            dataset = QwenContrastiveDataset(
-                ConceptualCaptionsInstructionAdapter(negatives=data_args.negatives if is_train else None),
-                tokenizer
-        )
-    elif dataset_name == "vg-instruct":
         dataset = QwenContrastiveDataset(
             VGInstructAdapter(),
             tokenizer

@@ -12,6 +12,7 @@ from peft import PeftModel
 from collections.abc import Mapping
 from .input_templating import *
 
+# Courtesy of the goods folks @ HF
 def _prepare_input(data):
     """
     Prepares one `data` before feeding it to the model, be it a tensor or a nested list/dictionary of tensors.
@@ -62,7 +63,6 @@ def get_embed_function(base_model, pretrain_adapter, instruction_adapter):
         
     
         def embed(model, processor, image = None, text = None):
-           
 
             conversation = None
             use_adapter = False
@@ -93,6 +93,4 @@ def get_embed_function(base_model, pretrain_adapter, instruction_adapter):
             output = model.inst_embed(inps, not use_adapter)
             
             return output.cpu()
-
-        print("\nLoad new version of embedding function\n")
         return functools.partial(embed, model, processor)   

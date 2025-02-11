@@ -9,7 +9,21 @@ unmask_attn_monkey_patch()
 from qwen.vision_process import process_vision_info
 import functools
 from peft import PeftModel
+from collections.abc import Mapping
 from .input_templating import *
+
+def _prepare_input(data):
+    """
+    Prepares one `data` before feeding it to the model, be it a tensor or a nested list/dictionary of tensors.
+    """
+    if isinstance(data, Mapping):
+        return type(data)({k: _prepare_input(v) for k, v in data.items()})
+    elif isinstance(data, (tuple, list)):
+        return type(data)(_prepare_input(v) for v in data)
+    elif isinstance(data, torch.Tensor):
+        cuda_tensor = data.cuda()
+        return cuda_tensor
+    return data
 
 def get_model(base_model, pretrain_adapter, instruction_adapter):
         from model.modeling_abc import ABCqwen2VL

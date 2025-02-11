@@ -24,11 +24,11 @@ def get_abcQwenVL(model_type, model_path):
         min_pixels = 256*28*28
         max_pixels = 1024*28*28
         from transformers import AutoProcessor
-        from model.modeling_abc import abcQwenVL
+        from model.modeling_abc import ABCqwen2VL
      
      
         # Load base model
-        base_model = abcQwenVL.from_pretrained(
+        base_model = ABCqwen2VL.from_pretrained(
         "Qwen/Qwen2-VL-7B-Instruct",
         torch_dtype=torch.bfloat16,
         attn_implementation="flash_attention_2",
@@ -83,8 +83,8 @@ def get_abcQwenVL(model_type, model_path):
         return functools.partial(embed, model, processor)    
 
 def get_abcQwenVL_instruct_model(model_type, model_path, instruct_model):
-        from model.modeling_abc import abcQwenVL
-        base_model = abcQwenVL.from_pretrained(
+        from model.modeling_abc import ABCqwen2VL
+        base_model = ABCqwen2VL.from_pretrained(
         "Qwen/Qwen2-VL-7B-Instruct",
         torch_dtype=torch.bfloat16,
         attn_implementation="flash_attention_2",
@@ -235,14 +235,5 @@ def get_model_with_embed_function(model_type, pretrain_model_path, instruct_mode
         return get_abcQwenVL_instruct_batch(model_type, pretrain_model_path, instruct_model_path)
     elif model_type == "abcQwenVL-Instruct":
         return get_abcQwenVL_instruct(model_type, pretrain_model_path, instruct_model_path)
-    elif model_type == "vlm2vec":
-        from eval_models.VLM2Vec.scripts.vlm2vec_functional import vlm2vec_embed_function
-        return vlm2vec_embed_function()
-    elif model_type == "magiclens":
-        from eval_models.magiclens.magiclens_functional import magiclens_embed_function
-        return magiclens_embed_function()
-    elif model_type == "uniir":
-        from eval_models.UniIR.src.models.uniir_clip.clip_scorefusion.uniir_functional import uniir_embed_function
-        return uniir_embed_function()
     else:
         raise Exception("NotImplementedError")

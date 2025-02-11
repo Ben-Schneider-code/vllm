@@ -212,11 +212,6 @@ def qwen2_forward_low_memory(
 def unmask_attn_monkey_patch():
     transformers.models.qwen2_vl.modeling_qwen2_vl.QWEN2_VL_ATTENTION_CLASSES = QWENVL_ATTENTION_UNMASKED
 
-# Patch the vision encoder to support gradient checkpointing with LoRA
-def get_qwenvl_vision_tower_input_embeddings(self) -> torch.nn.Module:
-    return self.patch_embed
-
-
 def monkey_patch_transformers_lib():
     """
     Skip the logits computation.
@@ -228,7 +223,3 @@ def monkey_patch_transformers_lib():
     Qwen2ForCausalLM.forward = qwen2_forward_low_memory
     from transformers.models.qwen2_vl.modeling_qwen2_vl import Qwen2VLForConditionalGeneration
     Qwen2VLForConditionalGeneration.forward = qwenvl_low_memory_forward
-    from transformers.models.qwen2_vl.modeling_qwen2_vl import Qwen2VisionTransformerPretrainedModel
-    Qwen2VisionTransformerPretrainedModel.get_input_embeddings = get_qwenvl_vision_tower_input_embeddings
-
-    

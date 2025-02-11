@@ -219,20 +219,6 @@ class Split(Dataset):
     def __len__(self):
         return len(self.idx)
 
-# Last 128,000 samples are reserved for finetuning
-def get_split(ds, pretrain=True):
-    start_of_pretrain = 0
-    end_of_finetune = len(ds)
-    end_of_pretrain = end_of_finetune - 128000
-
-    if pretrain:
-        ds = Split(ds, list(range(start_of_pretrain, end_of_pretrain)))
-    else:
-        ds = Split(ds, list(range(end_of_pretrain, end_of_finetune)))
-
-    return ds
-
-
 def build_contrastive_dataset(
     data_args,
     tokenizer,
@@ -240,24 +226,9 @@ def build_contrastive_dataset(
     is_train=False # whether to use negatives or not
 ):  
 
-    if dataset_name == 'cc':
-        dataset = QwenContrastiveDataset(
-                ConceptualCaptionsAdapter(),
-                tokenizer,
-            )
-    elif dataset_name == 'cc128k':
-        dataset = QwenContrastiveDataset(
-                CC128kAdapter(),
-                tokenizer,
-            )
-    elif dataset_name == 'mscoco':
-        dataset = QwenContrastiveDataset(
-                MSCOCOAdapter(),
-                tokenizer,
-            )
-    elif dataset_name == "cc_pretrain":
+    if dataset_name == "cc_pretrain":
                 dataset = QwenContrastiveDataset(
-                get_split(ConceptualCaptionsPretrainAdapter(negatives=data_args.negatives if is_train else None), pretrain=True),
+                ConceptualCaptionsPretrainAdapter(negatives=data_args.negatives if is_train else None),
                 tokenizer
             )
     elif dataset_name == "instruct":
@@ -265,23 +236,12 @@ def build_contrastive_dataset(
             VGInstructAdapter(),
             tokenizer
     )        
-    elif dataset_name == "vg-eval-instruct":
-        dataset = QwenContrastiveDataset(
-            VGEvalInstructAdapter(),
-            tokenizer
-    )  
-
     elif dataset_name == "mscoco_pretrain":
             dataset = QwenContrastiveDataset(
             MSCOCOPretrainAdapter(negatives=None),
             tokenizer,
 
-        )       
-    elif dataset_name == "mscoco_instruct":
-        dataset = QwenContrastiveDataset(
-        MSCOCOInstructAdapter(),
-        tokenizer,
-    )
+        )
     else:
         raise Exception("NotImplementedError")
     

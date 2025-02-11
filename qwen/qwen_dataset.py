@@ -227,20 +227,19 @@ def build_contrastive_dataset(
 ):  
 
     if dataset_name == "cc_pretrain":
-                dataset = QwenContrastiveDataset(
-                ConceptualCaptionsPretrainAdapter(negatives=data_args.negatives if is_train else None),
-                tokenizer
-            )
+        dataset = QwenContrastiveDataset(
+            ConceptualCaptionsPretrainAdapter(negatives=data_args.negatives if is_train else None),
+            tokenizer
+        )
     elif dataset_name == "instruct":
         dataset = QwenContrastiveDataset(
             VGInstructAdapter(),
             tokenizer
-    )        
+        )        
     elif dataset_name == "mscoco_pretrain":
-            dataset = QwenContrastiveDataset(
-            MSCOCOPretrainAdapter(negatives=None),
+        dataset = QwenContrastiveDataset(
+            MSCOCOPretrainAdapter(),
             tokenizer,
-
         )
     else:
         raise Exception("NotImplementedError")

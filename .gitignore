@@ -1,6 +1,4 @@
 **/__pycache__/
 /wandb/**
-/visualization/visual
-/visual
 output_log.txt
 ./.vscode/*

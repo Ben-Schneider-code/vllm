@@ -1,91 +1,20 @@
 import torch
+
+# --  Efficency and Attn patches for tranfomers lib  ----------------------
 from monkey_patch.qwen_attn_patch import monkey_patch_transformers_lib, unmask_attn_monkey_patch
+monkey_patch_transformers_lib()
+unmask_attn_monkey_patch()
+# -------------------------------------------------------------------------
+
 from qwen.vision_process import process_vision_info
 import functools
 from peft import PeftModel
-from collections.abc import Mapping
+from .input_templating import *
 
-def _prepare_input(data):
-    """
-    Prepares one `data` before feeding it to the model, be it a tensor or a nested list/dictionary of tensors.
-    """
-    if isinstance(data, Mapping):
-        return type(data)({k: _prepare_input(v) for k, v in data.items()})
-    elif isinstance(data, (tuple, list)):
-        return type(data)(_prepare_input(v) for v in data)
-    elif isinstance(data, torch.Tensor):
-        cuda_tensor = data.cuda()
-        return cuda_tensor
-    return data
-
-def get_abcQwenVL(model_type, model_path):
-        monkey_patch_transformers_lib()
-        unmask_attn_monkey_patch()
-        min_pixels = 256*28*28
-        max_pixels = 1024*28*28
-        from transformers import AutoProcessor
-        from model.modeling_abc import ABCqwen2VL
-     
-     
-        # Load base model
-        base_model = ABCqwen2VL.from_pretrained(
-        "Qwen/Qwen2-VL-7B-Instruct",
-        torch_dtype=torch.bfloat16,
-        attn_implementation="flash_attention_2",
-        )
-        model = PeftModel.from_pretrained(base_model, model_path)
-
-        model = model.merge_and_unload()
-        model.to(torch.bfloat16).cuda()
-
-        processor = AutoProcessor.from_pretrained(model_path,
-                                                    padding_side="right",
-                                                    use_fast=False,
-                                                    max_pixels=max_pixels,
-                                                    min_pixels=min_pixels)
-        
-    
-        def embed(model, processor, item: str = "", dtype: str = "text"):
-            assert dtype in ["image", "text"]
-
-            conversation = None
-
-            if dtype == "text":
-                conversation = [{
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text" : item}
-                    ]
-                }]
-            else:
-                conversation = [{
-                    "role": "user",
-                    "content": [
-                        {"type": "image", "image": item},
-                        {"type": "text", "text" : ""}
-                    ]
-                }]
-            text_input = processor.apply_chat_template(
-                conversation, tokenize=False, add_generation_prompt=True
-            )
-            image_inputs, _ = process_vision_info(conversation)
-
-            inps = processor(
-                text=text_input,
-                images=image_inputs,
-                padding=True,
-                return_tensors="pt",
-            )
-
-            inps = _prepare_input(inps)
-            output = model.embed(inps)
-            return output.cpu()
-        return functools.partial(embed, model, processor)    
-
-def get_abcQwenVL_instruct_model(model_type, model_path, instruct_model):
+def get_model(base_model, pretrain_adapter, instruction_adapter):
         from model.modeling_abc import ABCqwen2VL
         base_model = ABCqwen2VL.from_pretrained(
-        "Qwen/Qwen2-VL-7B-Instruct",
+        base_model,
         torch_dtype=torch.bfloat16,
         attn_implementation="flash_attention_2",
         )
@@ -93,122 +22,47 @@ def get_abcQwenVL_instruct_model(model_type, model_path, instruct_model):
         base_model.instruction_mode = True
 
         # Load and merge pretrain adapter
-        pretrained_model = PeftModel.from_pretrained(base_model, model_path)
+        pretrained_model = PeftModel.from_pretrained(base_model, pretrain_adapter)
         pretrained_model = pretrained_model.merge_and_unload()
 
         # Load instruction model
-        model = PeftModel.from_pretrained(pretrained_model, instruct_model, adapter_name="instruct")
+        model = PeftModel.from_pretrained(pretrained_model, instruction_adapter, adapter_name="instruct")
         
         # The forward method needs to be able to toggle LoRA
         setattr(model.get_base_model(), "get_peft_wrapper", lambda: model)
         model.to(torch.bfloat16).cuda()
         return model
 
-def get_abcQwenVL_instruct_batch(model_type, model_path, instruct_model):
-        monkey_patch_transformers_lib()
-        unmask_attn_monkey_patch()
+def get_embed_function(base_model, pretrain_adapter, instruction_adapter):
         min_pixels = 256*28*28
-        max_pixels = 512*28*28
+        max_pixels = 1024*28*28
         from transformers import AutoProcessor
         
-        model = get_abcQwenVL_instruct_model(model_type, model_path, instruct_model)
+        model = get_model(base_model, pretrain_adapter, instruction_adapter)
 
-        processor = AutoProcessor.from_pretrained(model_path,
-                                                    padding_side="right",
-                                                    use_fast=False,
-                                                    max_pixels=max_pixels,
-                                                    min_pixels=min_pixels)
+        processor = AutoProcessor.from_pretrained(base_model,
+                                                padding_side="right",
+                                                use_fast=False,
+                                                max_pixels=max_pixels,
+                                                min_pixels=min_pixels)
         
     
-        def embed(model, processor, item: str = "", dtype: str = "text", instruction=""):
-            assert dtype in ["image", "text"]
+        def embed(model, processor, image = None, text = None):
+           
 
             conversation = None
+            use_adapter = False
 
-            if dtype == "text":
-                assert isinstance(item, list)
-                text_inputs = []
-                for i in item:
-                    conversation = [{
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text" : i}
-                        ]
-                    }]
-                    text_input = processor.apply_chat_template(
-                        conversation, tokenize=False, add_generation_prompt=True
-                    )
-                    text_inputs.append(text_input)
-
-                inps = processor(
-                    text=text_inputs,
-                    images=None,
-                    padding=True,
-                    return_tensors="pt",
-                )
+            if isinstance(text, str) and image is None: # text only embedding case
+                conversation = text_only_input(text)
+            elif isinstance(image, str) and text is None:
+                conversation = image_only_input(image)
+            elif isinstance(image, str) and isinstance(text, str):
+                conversation = image_and_inst_input(text, image)
+                use_adapter = True
             else:
-                conversation = [{
-                    "role": "user",
-                    "content": [
-                        {"type": "image", "image": item},
-                        {"type": "text", "text" : f"Instruction: {instruction}"}
-                    ]
-                }]
-                text_input = processor.apply_chat_template(
-                    conversation, tokenize=False, add_generation_prompt=True
-                )
-                image_inputs, _ = process_vision_info(conversation)
-
-                inps = processor(
-                    text=text_input,
-                    images=image_inputs,
-                    padding=True,
-                    return_tensors="pt",
-                )
-
-            inps = _prepare_input(inps)
-
-            output = model.inst_embed(inps, dtype=="text")
-            return output.cpu()
-        print("\nLoad instruction version of model\n")
-        return functools.partial(embed, model, processor)   
-
-def get_abcQwenVL_instruct(model_type, model_path, instruct_model):
-        monkey_patch_transformers_lib()
-        unmask_attn_monkey_patch()
-        min_pixels = 256*28*28
-        max_pixels = 512*28*28
-        from transformers import AutoProcessor
-        
-        model = get_abcQwenVL_instruct_model(model_type, model_path, instruct_model)
-
-        processor = AutoProcessor.from_pretrained(model_path,
-                                                    padding_side="right",
-                                                    use_fast=False,
-                                                    max_pixels=max_pixels,
-                                                    min_pixels=min_pixels)
-        
-    
-        def embed(model, processor, item: str = "", dtype: str = "text", instruction=""):
-            assert dtype in ["image", "text"]
-
-            conversation = None
-
-            if dtype == "text":
-                conversation = [{
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text" : item}
-                    ]
-                }]
-            else:
-                conversation = [{
-                    "role": "user",
-                    "content": [
-                        {"type": "image", "image": item},
-                        {"type": "text", "text" : f"Instruction: {instruction}"}
-                    ]
-                }]
+                raise Exception("NotSupportedModalityError")
+            
             text_input = processor.apply_chat_template(
                 conversation, tokenize=False, add_generation_prompt=True
             )
@@ -222,18 +76,9 @@ def get_abcQwenVL_instruct(model_type, model_path, instruct_model):
             )
 
             inps = _prepare_input(inps)
-
-            output = model.inst_embed(inps, dtype=="text")
+            output = model.inst_embed(inps, not use_adapter)
+            
             return output.cpu()
-        print("\nLoad instruction version of model\n")
-        return functools.partial(embed, model, processor)   
 
-def get_model_with_embed_function(model_type, pretrain_model_path, instruct_model_path=None, batch=False):
-    if model_type == "abcQwenVL":
-        return get_abcQwenVL(model_type, pretrain_model_path)
-    elif model_type == "abcQwenVL-Instruct" and batch:
-        return get_abcQwenVL_instruct_batch(model_type, pretrain_model_path, instruct_model_path)
-    elif model_type == "abcQwenVL-Instruct":
-        return get_abcQwenVL_instruct(model_type, pretrain_model_path, instruct_model_path)
-    else:
-        raise Exception("NotImplementedError")
+        print("\nLoad new version of embedding function\n")
+        return functools.partial(embed, model, processor)   

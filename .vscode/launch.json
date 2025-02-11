@@ -2,6 +2,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Demo",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:VLLM_REPO}/demo.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "5",
+                "PYTHONPATH": "${env:VLLM_REPO}",
+                "WANDB_MODE": "offline"
+            }
+        },
+        {
             "name": "Pretrain Qwen2VL with DeepSpeed",
             "type": "debugpy",
             "request": "launch",

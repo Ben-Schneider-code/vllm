@@ -31,7 +31,8 @@
                             <span style="color: green;">C</span>
                         </h1>
                         <h2 class="title is-4 publication-title">
-                            <span style="color: blue;">A</span>chieving <span style="color: red;">B</span>etter <span style="color: green;">C</span>ontrol of Multimodal Embeddings using VLMs
+                            <span style="color: blue;">A</span>chieving <span style="color: red;">B</span>etter <span
+                                style="color: green;">C</span>ontrol of Multimodal Embeddings using VLMs
                         </h2>
                         <div class="is-size-5 publication-authors">
                             <span class="author-block">
@@ -166,40 +167,34 @@
         </div>
     </section>
 
-
     <section class="section hero is-light">
         <div class="container is-max-desktop">
             <div class="columns is-centered has-text-centered">
                 <div class="column is-four-fifths">
-                    <h1 class="title is-1">Evaluations</h1>
+                    <h1 class="title is-1">Key Ideas & Design</h1>
                     <div class="content has-text-justified">
                         <p>
-                            We evaluate on our model on zero-shot multimodal VQA, classification and retrieval tasks. Our model si
-                            the best performing model at both multimodal classification and VQA on the MMEB (Massive
-                            Multimodal Embedding Benchmark). Additional evaluations can be found within the paper.
+                            The key behind ABC's training is that we pretrain the model using a large dataset of
+                            <i>difficult embedding samples</i>, where each batch contains many candidates that are
+                            <i>relevant but not quite correct</i> <b>(left)</b>.
+                            The pretrained model is therefore able to generate embeddings that capture subtle
+                            differences.
+                            After a short finetuning stage, the model ideal for tasks like VQA, where differences in
+                            user instructions result in different correct answers <b>(right)</b>.
                         </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Image carousel -->
-    <section class="hero">
-        <div class="hero-body">
-            <div class="container is-max-desktop">
-                <div class="columns is-centered">
-                    <div class="column is-full">
-                        <div class="item">
-                            <!-- Your image here -->
-                            <img src="static/images/results.png" alt="main_result" />
+                        <div class="columns is-vcentered">
+                            <div class="column">
+                                <img src="static/images/data.png" style="width: 80%;" />
+                            </div>
+                            <div class="column">
+                                <img src="static/images/task.png" style="width: 120%;" />
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <!-- End image carousel -->
 
 
     <section class="section hero is-light">
@@ -209,9 +204,10 @@
                     <h1 class="title is-1">Try it out!</h1>
                     <div class="content has-text-justified">
                         <p>
-                            Nothing beats trying it out yourself! Just clone our repo and use the script below (demo.py) and get started
+                            Nothing beats trying it yourself! Just clone our repo and use the script below (demo.py in
+                            the repository) and get started
                             creating embeddings!
-                            To recreate our model or do additional instruction finetuning on top of our
+                            To recreate our model or do additional multimodal instruction finetuning on our
                             pretrained base, checkout our repo for steps.
                         </p>
                     </div>
@@ -250,7 +246,8 @@
 
     <body>
         <section class="section">
-            <div class="container">
+
+            <div class="container column is-four-fifths">
                 <pre class="code-block"><code class="language-python">
     import torch
     from transformers import AutoProcessor, AutoModel
@@ -281,13 +278,52 @@
         <div class="container is-max-desktop">
             <div class="columns is-centered has-text-centered">
                 <div class="column is-four-fifths">
-                    <h1 class="title is-1">Case Studies</h1>
+                    <h1 class="title is-1">Evaluations</h1>
                     <div class="content has-text-justified">
                         <p>
-                            Here we showcase detailed examples comparing the performance between three models: CFT model
-                            (Qwen2.5-Math-7B-CFT), the original model (Qwen2.5-Math-7B), and SFT model. These cases
-                            demonstrate how different training approaches affect mathematical reasoning abilities.
+                            We evaluate on our model on zero-shot multimodal VQA, classification and retrieval tasks.
+                            Our model si
+                            the best performing model at both multimodal classification and VQA on the MMEB (Massive
+                            Multimodal Embedding Benchmark). Additional evaluations can be found within the paper.
                         </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Image carousel -->
+    <section class="hero">
+        <div class="hero-body">
+            <div class="container is-max-desktop">
+                <div class="columns is-centered">
+                    <div class="column is-full">
+                        <div class="item">
+                            <!-- Your image here -->
+                            <img src="static/images/results.png" alt="main_result" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- End image carousel -->
+
+    <section class="section hero is-light">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-four-fifths">
+                    <h1 class="title is-1">Dynamic Resolution</h1>
+                    <div class="content has-text-justified">
+                        <p>
+                            Many CLIP embedding models only support 224x224 as the input resolution.
+                            We find that downscaling images before embeddings results in significant performence
+                            degradation in some tasks (for example: <a
+                                href="https://arxiv.org/abs/2007.0855">ImageNet-A</a>).
+                            Therefore, we support image embedding with dynamically chosen resolutions, allowing the user
+                            to tradeoff between compute and embedding quality.
+                        </p>
+                        <img src="static/images/resolution.png" alt="resolution" />
                     </div>
                 </div>
             </div>

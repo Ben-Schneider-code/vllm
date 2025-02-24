@@ -2,7 +2,7 @@ import torch
 from typing import Dict
 from torch.utils.data import Dataset, Subset
 from qwen.vision_process import process_vision_info
-from dataset_utils.conceptual_captions import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsInstructionAdapter, ConceptualCaptionsPretrainAdapter, VGEvalInstructAdapter, VGInstructAdapter
+from dataset_utils.dataset_adapter import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsInstructionAdapter, ConceptualCaptionsPretrainAdapter, VGEvalInstructAdapter, VGInstructAdapter
 from dataset_utils.mscoco import MSCOCOAdapter, MSCOCOInstructAdapter, MSCOCOPretrainAdapter
 from util.dataclass import DataTrainingArguments
 import os
@@ -206,19 +206,6 @@ def build_eval_datasets(
 
     return eval_ds
 
-class Split(Dataset):
-    def __init__(self, ds, idx) -> None:
-        super().__init__()
-        self.ds = ds
-        self.idx = idx
-        self.root = ds.root
-
-    def __getitem__(self, i):
-        return self.ds[self.idx[i]]
-
-    def __len__(self):
-        return len(self.idx)
-
 def build_contrastive_dataset(
     data_args,
     tokenizer,
@@ -236,11 +223,6 @@ def build_contrastive_dataset(
             VGInstructAdapter(),
             tokenizer
         )        
-    elif dataset_name == "mscoco_pretrain":
-        dataset = QwenContrastiveDataset(
-            MSCOCOPretrainAdapter(),
-            tokenizer,
-        )
     else:
         raise Exception("NotImplementedError")
     

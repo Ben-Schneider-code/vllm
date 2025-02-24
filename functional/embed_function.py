@@ -93,4 +93,4 @@ def get_embed_function(base_model, pretrain_adapter, instruction_adapter):
             output = model.inst_embed(inps, not use_adapter)
             
             return output.cpu()
-        return functools.partial(embed, model, processor)   
+        return functools.partial(embed, model, processor)

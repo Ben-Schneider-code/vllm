@@ -2,108 +2,18 @@ import os
 import orjson 
 from torch.utils.data import Dataset
 import numpy as np
+from datasets import load_dataset
 
-class ConceptualCaptionsAdapter(Dataset):
-    
-    """
-    **An adapter must return a data element in the following format**
-    {
-            "query": {
-                optional<"image": str_path>,
-                "id": optional<any>,
-                "conversations": [
-                    {
-                        "from": "human",
-                        "value": str
-                    },
-                    {
-                        "from": "gpt",
-                        "value": str
-                    }
-                ]
-            },
+class ConceptualCaptionsPretrainAdapter(Dataset):
 
-            "pos_cand": {
-                optional<"image": str_path>,
-                "id": optional<any>,
-                "conversations": [
-                    {
-                        "from": "human",
-                        "value": str
-                    },
-                    {
-                    "from": "gpt",
-                    "value": str
-                    }
-                ]
-            }
-    }
-    """
-
-    def __init__(self):      
-        assert "CC_ROOT" in os.environ, "Environment variable 'CC_ROOT' is not set"
-        self.root = os.environ["CC_ROOT"]
-        with open(os.path.join(self.root, "meta.json"), 'rb') as f:
-            self.meta = orjson.loads(f.read())
-        
 
     def __len__(self):
         return len(self.meta)
     
-    # Currently the modality is image -> text
-    def __getitem__(self, idx):
-        metadata = self.meta[idx]
-        image = metadata["image"]
-
-        formatted_item = {
-            "id": metadata["id"],
-            "url": metadata["url"], 
-            "query": {
-                "id": metadata["id"],
-                "conversations": [
-                    {
-                        "from": "human",
-                        "value": "Instruction: What kind of image would this caption be used for? Caption: " + metadata["caption"] 
-
-                    },
-                    {
-                        "from": "gpt",
-                        "value": ""
-                    }
-                ]
-            },
-            "pos_cand": {
-                "id": metadata["id"],
-                "image": image,
-                "conversations": [
-                    {
-                        "from": "human",
-                        "value": "Describe this image in detail."
-                    },
-                    {
-                        "from": "gpt",
-                        "value": ""
-                    }
-                ]
-            }
-        }
-
-        return formatted_item
-    
-class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
-
     def __init__(self, negatives=None):      
-        assert "CC_PRETRAIN_ROOT" in os.environ, "Environment variable 'CC_PRETRAIN_ROOT' is not set"
-        self.root = os.environ["CC_PRETRAIN_ROOT"]
-        with open(os.path.join(self.root, "meta.json"), 'rb') as f:
-            self.meta = orjson.loads(f.read())
-        
+        assert "CC_ROOT" in os.environ, "Please specify the location of the Conceptual Captions images dataset.\n If you do not have the dataset downloaded, we provide a script to fetch images from the web"
+        self.meta = load_dataset("TIGER-Lab/ABC-Pretraining-Data")
         self.negatives = negatives
-        if self.negatives is not None:
-            with open(os.path.join(self.root, "negatives.json"), 'rb') as f:
-                self.negative_meta = orjson.loads(f.read())
-            assert len(self.meta) == len(self.negative_meta)
-
 
     def _attach_negatives(self, idx, item):
         
@@ -113,7 +23,7 @@ class ConceptualCaptionsPretrainAdapter(ConceptualCaptionsAdapter):
         offsets = np.random.randint(0, offset, size=self.negatives)
         neg_idx = starts + offsets
 
-        negatives_for_idx = self.negative_meta[str(idx)]
+        negatives_for_idx = self.meta[idx]["negatives"]
         item["negatives"] = [self._create_candidate(self.meta[negatives_for_idx[i]]) for i in neg_idx]
 
 
@@ -205,7 +115,7 @@ def format_inst_query(img_path, inst):
 class VGInstructAdapter(Dataset):
 
     def __init__(self):
-        assert "VG_ROOT" in os.environ, "Dataset location was not specified by env variable"
+        assert "VG_ROOT" in os.environ, "Please specify the location of the visual genome iamges dataset"
         self.root = os.environ["VG_ROOT"]
         with open(os.path.join(self.root, "dataset.json")) as f:
             self.ds_defintion = orjson.loads(f.read())

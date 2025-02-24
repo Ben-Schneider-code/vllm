@@ -2,8 +2,7 @@ import torch
 from typing import Dict
 from torch.utils.data import Dataset, Subset
 from qwen.vision_process import process_vision_info
-from dataset_utils.dataset_adapter import CC128kAdapter, ConceptualCaptionsAdapter, ConceptualCaptionsInstructionAdapter, ConceptualCaptionsPretrainAdapter, VGEvalInstructAdapter, VGInstructAdapter
-from dataset_utils.mscoco import MSCOCOAdapter, MSCOCOInstructAdapter, MSCOCOPretrainAdapter
+from dataset_utils.dataset_adapter import ConceptualCaptionsPretrainAdapter, VGInstructAdapter
 from util.dataclass import DataTrainingArguments
 import os
 import random

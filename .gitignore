@@ -2,3 +2,4 @@
 /wandb/**
 output_log.txt
 ./.vscode/*
+data/
